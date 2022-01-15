@@ -22,7 +22,8 @@ class PersistingService {
       response = await LocalStorage.saveEntityLocally(encodedJson);
     }
 
-    return response == 200 || response == true ? 'success' : 'failed';
+    if (response is Response)
+      return response.statusCode == 201 ? 'success' : 'failed';
 
   }
 
@@ -47,7 +48,7 @@ class PersistingService {
     var connectivityResult = await Connectivity().checkConnectivity();
     var wifiName = await WifiInfo().getWifiName();
 
-    if (connectivityResult == ConnectivityResult.wifi && wifiName == desiredWiFiName) {
+    if (connectivityResult == ConnectivityResult.wifi && wifiName == Constants.DESIRED_WIFI) {
       return true;
     }
 

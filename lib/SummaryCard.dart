@@ -1,8 +1,9 @@
 import 'dart:convert';
 
+import 'package:finadv/utils/Constants.dart';
+import 'package:finadv/utils/HttpRequests.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SummaryCard extends StatefulWidget {
@@ -16,41 +17,56 @@ class SummaryCard extends StatefulWidget {
 
 class _SummaryCardState extends State<SummaryCard> {
   Future<Balance>? _balance;
+  var pauTotal;
+  var jacTotal;
+  late SharedPreferences prefs;
 
   @override
   void initState() {
     super.initState();
 
-    this._balance = getBalance();
+    this._balance = _getBalanceAndTotals();
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-        future: getBalance(),
+        future: _getBalanceAndTotals(),
         builder: (context, snapshot) {
+          if (snapshot.hasError)
+            return Center(
+                child: Text('Empty', style: TextStyle(color: Colors.black)));
+
           return snapshot.connectionState == ConnectionState.waiting
               ? Center(child: CircularProgressIndicator())
               : renderStats(snapshot.data);
         });
   }
 
-  Future<Balance> getBalance() async {
-    var response = await http.Client()
-        .get(Uri.parse('http://192.168.0.87:8080/balance'), headers: {
-      'Content-Type': 'application/json',
-    });
-
-    final prefs = await SharedPreferences.getInstance();
-
+  Future<Balance> _getBalanceAndTotals() async {
     Balance newestBalance = Balance.EMPTY_OBJ;
 
-    if (response.statusCode == 200) {
-      var json = jsonDecode(response.body);
-      newestBalance = Balance.fromJson(json);
-      prefs.setString("balance", response.body);
-    } else {
-      print('A network error occurred');
+    try {
+      List<Future> futures = [
+        HttpRequests.waitForResponseInSeconds(seconds: 3),
+        HttpRequests.getBalance(),
+      ];
+
+      var response = await Future.any(futures);
+
+      prefs = await SharedPreferences.getInstance();
+      pauTotal = await prefs.getString(Constants.PAU);
+      jacTotal = await prefs.getString(Constants.JACK);
+
+      if (response.statusCode == 200) {
+        var json = jsonDecode(response.body);
+        newestBalance = Balance.fromJson(json);
+        prefs.setString("balance", response.body);
+      }
+    } catch (e) {
+      var fromLocalStorage = Balance.fromJson(jsonDecode(prefs.getString("balance")!));
+
+      newestBalance = fromLocalStorage != null ? fromLocalStorage : Balance.EMPTY_OBJ;;
     }
 
     return newestBalance;
@@ -59,35 +75,103 @@ class _SummaryCardState extends State<SummaryCard> {
   Widget renderStats(data) {
     var balance = data as Balance;
 
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'Na dzień:',
-            style: TextStyle(color: Colors.white),
-          ),
-          Text(
-            balance.date.toString(),
-            style: TextStyle(color: Colors.white),
-          ),
-          Text(
-            'PROWADZI',
-            style: TextStyle(color: Colors.white),
-          ),
-          Text(balance._whoLeads.toString(),
-              style: TextStyle(color: Colors.white)),
-          Text('Kwotą:', style: TextStyle(color: Colors.white)),
-          Text(balance.balance,
-              style: TextStyle(color: Colors.white)),
-
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Bilans'),
+        backgroundColor: Colors.indigoAccent,
+        actions: <Widget>[
           IconButton(
-              icon: Icon(Icons.refresh, color: Colors.white),
-          onPressed: () {
-            http.Client().delete(Uri.parse('http://192.168.0.87:8080/balance'),
-                headers: {'Content-type': 'application/json'});
-            setState(() {});
-          }),
+              icon: Icon(Icons.warning_amber_sharp, color: Colors.white),
+              onPressed: () {
+                HttpRequests.clearBalance();
+                setState(() {});
+              })
+        ],
+      ),
+      backgroundColor: Colors.white60,
+      body: Padding(
+        padding: EdgeInsets.only(top: 24.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: Constants.getDeviceWidthForList(context) * 0.9,
+              height: Constants.getDeviceHeightForList(context) * 0.3,
+              child: Card(
+                color: Colors.white70,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Podsumowanie',
+                            style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _personTotalWidget(Constants.JACK, jacTotal),
+                              _personTotalWidget(Constants.PAU, pauTotal),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(onPressed: () {},
+                            icon: Icon(Icons.ac_unit_outlined, color: Colors.yellow, size: 30,),
+                          ),
+                          Text(balance._whoLeads.toString().toUpperCase(),
+                              style:
+                                  TextStyle(color: Colors.black, fontSize: 20)),
+                          SizedBox(width: 15),
+                          Text(balance.balance,
+                              style: TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Padding _personTotalWidget(String personName, String total) {
+    return Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: Row(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 20.0),
+            child: Text(personName, style: TextStyle(fontSize: 20)),
+          ),
+          Text(total, style: TextStyle(fontSize: 20)),
         ],
       ),
     );
@@ -103,9 +187,7 @@ class Balance {
 
   static Balance fromJson(Map json) {
     return new Balance(int.parse(json['balance'].toString()),
-        json['whoLeads'].toString(),
-        getYYYYMMDD(json['date'])
-    );
+        json['whoLeads'].toString(), getYYYYMMDD(json['date']));
   }
 
   String toJson() {
@@ -120,7 +202,6 @@ class Balance {
   String get balance => (_balance / 100).toString();
 
   static final Balance EMPTY_OBJ = new Balance(0, 'none', '');
-
 }
 
 // DRY!~!!!
@@ -132,4 +213,9 @@ String getYYYYMMDD(currentElement) {
   var day = dateTime.day.toString();
 
   return year + '-' + month + '-' + day;
+}
+
+Future<String> _getTotalFromLocalStorageByName(String personName) async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString(personName).toString();
 }

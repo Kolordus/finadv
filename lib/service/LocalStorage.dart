@@ -49,8 +49,7 @@ class LocalStorage {
   static void showAll() async {
     SharedPreferences db = await SharedPreferences.getInstance();
     for (var value in db.getKeys()) {
-      if (value.contains("Local"))
-        print(value);
+      if (value.contains("Local")) print(value);
     }
   }
 }

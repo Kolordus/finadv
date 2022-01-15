@@ -5,23 +5,23 @@ INJECTED from D:\PROJEKTY\flt\finadv\android\app\src\main\AndroidManifest.xml:1:
 INJECTED from D:\PROJEKTY\flt\finadv\android\app\src\main\AndroidManifest.xml:1:1-41:12
 INJECTED from D:\PROJEKTY\flt\finadv\android\app\src\main\AndroidManifest.xml:1:1-41:12
 MERGED from D:\PROJEKTY\flt\finadv\android\app\src\main\AndroidManifest.xml:1:1-41:12
-MERGED from [:shared_preferences] D:\PROJEKTY\flt\finadv\build\shared_preferences\intermediates\library_manifest\debug\AndroidManifest.xml:2:1-7:12
+MERGED from [:shared_preferences_android] D:\PROJEKTY\flt\finadv\build\shared_preferences_android\intermediates\library_manifest\debug\AndroidManifest.xml:2:1-7:12
 MERGED from [:wifi_info_flutter] D:\PROJEKTY\flt\finadv\build\wifi_info_flutter\intermediates\library_manifest\debug\AndroidManifest.xml:2:1-9:12
 MERGED from [:permission_handler] D:\PROJEKTY\flt\finadv\build\permission_handler\intermediates\library_manifest\debug\AndroidManifest.xml:2:1-7:12
 MERGED from [:connectivity_plus] D:\PROJEKTY\flt\finadv\build\connectivity_plus\intermediates\library_manifest\debug\AndroidManifest.xml:2:1-9:12
 MERGED from [:android_intent] D:\PROJEKTY\flt\finadv\build\android_intent\intermediates\library_manifest\debug\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.fragment:fragment:1.1.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\ba80674a1a5fdce2b1b29eea5683af77\fragment-1.1.0\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.activity:activity:1.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\68865d38a53fb5c240061f062e474515\jetified-activity-1.0.0\AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.viewpager:viewpager:1.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\2f70304b103eacfab05dbe55739e869f\viewpager-1.0.0\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.loader:loader:1.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\49dee3543bc65746b6bba9f83aa0b18a\loader-1.0.0\AndroidManifest.xml:17:1-22:12
-MERGED from [androidx.activity:activity:1.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\68865d38a53fb5c240061f062e474515\jetified-activity-1.0.0\AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.customview:customview:1.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\86cf751735e9e9dd0416cce35c4a71a1\customview-1.0.0\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.core:core:1.1.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\d67cd79abd1ca209502f51c69d23182b\core-1.1.0\AndroidManifest.xml:17:1-26:12
 MERGED from [androidx.lifecycle:lifecycle-runtime:2.2.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\b37a656be7da34e79d326523a32fbcaa\lifecycle-runtime-2.2.0\AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.savedstate:savedstate:1.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\29e9e6ac99026fff5bb21139b2ad74ac\jetified-savedstate-1.0.0\AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.lifecycle:lifecycle-livedata:2.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\15faa7fdc535e832982b4615d300cb77\lifecycle-livedata-2.0.0\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\033c1099bb4cd11be9138377da501d59\lifecycle-livedata-core-2.0.0\AndroidManifest.xml:17:1-22:12
-MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\af9af86a2035b10a0514f89f66cf8a9a\versionedparcelable-1.1.0\AndroidManifest.xml:17:1-27:12
 MERGED from [androidx.arch.core:core-runtime:2.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\943631e3c5a6dfa67bece88add1d3fe3\core-runtime-2.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\af9af86a2035b10a0514f89f66cf8a9a\versionedparcelable-1.1.0\AndroidManifest.xml:17:1-27:12
 MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.1.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\2b6a4e71d38d3b36d0c903aac26cfd25\lifecycle-viewmodel-2.1.0\AndroidManifest.xml:17:1-22:12
 INJECTED from D:\PROJEKTY\flt\finadv\android\app\src\debug\AndroidManifest.xml:1:1-10:12
 INJECTED from D:\PROJEKTY\flt\finadv\android\app\src\debug\AndroidManifest.xml:1:1-10:12
@@ -98,8 +98,8 @@ uses-sdk
 INJECTED from D:\PROJEKTY\flt\finadv\android\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from D:\PROJEKTY\flt\finadv\android\app\src\main\AndroidManifest.xml
 INJECTED from D:\PROJEKTY\flt\finadv\android\app\src\main\AndroidManifest.xml
-MERGED from [:shared_preferences] D:\PROJEKTY\flt\finadv\build\shared_preferences\intermediates\library_manifest\debug\AndroidManifest.xml:5:5-44
-MERGED from [:shared_preferences] D:\PROJEKTY\flt\finadv\build\shared_preferences\intermediates\library_manifest\debug\AndroidManifest.xml:5:5-44
+MERGED from [:shared_preferences_android] D:\PROJEKTY\flt\finadv\build\shared_preferences_android\intermediates\library_manifest\debug\AndroidManifest.xml:5:5-44
+MERGED from [:shared_preferences_android] D:\PROJEKTY\flt\finadv\build\shared_preferences_android\intermediates\library_manifest\debug\AndroidManifest.xml:5:5-44
 MERGED from [:wifi_info_flutter] D:\PROJEKTY\flt\finadv\build\wifi_info_flutter\intermediates\library_manifest\debug\AndroidManifest.xml:5:5-44
 MERGED from [:wifi_info_flutter] D:\PROJEKTY\flt\finadv\build\wifi_info_flutter\intermediates\library_manifest\debug\AndroidManifest.xml:5:5-44
 MERGED from [:permission_handler] D:\PROJEKTY\flt\finadv\build\permission_handler\intermediates\library_manifest\debug\AndroidManifest.xml:5:5-44
@@ -110,12 +110,12 @@ MERGED from [:android_intent] D:\PROJEKTY\flt\finadv\build\android_intent\interm
 MERGED from [:android_intent] D:\PROJEKTY\flt\finadv\build\android_intent\intermediates\library_manifest\debug\AndroidManifest.xml:5:5-44
 MERGED from [androidx.fragment:fragment:1.1.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\ba80674a1a5fdce2b1b29eea5683af77\fragment-1.1.0\AndroidManifest.xml:20:5-22:41
 MERGED from [androidx.fragment:fragment:1.1.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\ba80674a1a5fdce2b1b29eea5683af77\fragment-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.activity:activity:1.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\68865d38a53fb5c240061f062e474515\jetified-activity-1.0.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.activity:activity:1.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\68865d38a53fb5c240061f062e474515\jetified-activity-1.0.0\AndroidManifest.xml:20:5-22:41
 MERGED from [androidx.viewpager:viewpager:1.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\2f70304b103eacfab05dbe55739e869f\viewpager-1.0.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.viewpager:viewpager:1.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\2f70304b103eacfab05dbe55739e869f\viewpager-1.0.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.loader:loader:1.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\49dee3543bc65746b6bba9f83aa0b18a\loader-1.0.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.loader:loader:1.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\49dee3543bc65746b6bba9f83aa0b18a\loader-1.0.0\AndroidManifest.xml:20:5-44
-MERGED from [androidx.activity:activity:1.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\68865d38a53fb5c240061f062e474515\jetified-activity-1.0.0\AndroidManifest.xml:20:5-22:41
-MERGED from [androidx.activity:activity:1.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\68865d38a53fb5c240061f062e474515\jetified-activity-1.0.0\AndroidManifest.xml:20:5-22:41
 MERGED from [androidx.customview:customview:1.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\86cf751735e9e9dd0416cce35c4a71a1\customview-1.0.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.customview:customview:1.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\86cf751735e9e9dd0416cce35c4a71a1\customview-1.0.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.core:core:1.1.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\d67cd79abd1ca209502f51c69d23182b\core-1.1.0\AndroidManifest.xml:20:5-22:41
@@ -128,10 +128,10 @@ MERGED from [androidx.lifecycle:lifecycle-livedata:2.0.0] C:\Users\Jacek\.gradle
 MERGED from [androidx.lifecycle:lifecycle-livedata:2.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\15faa7fdc535e832982b4615d300cb77\lifecycle-livedata-2.0.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\033c1099bb4cd11be9138377da501d59\lifecycle-livedata-core-2.0.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\033c1099bb4cd11be9138377da501d59\lifecycle-livedata-core-2.0.0\AndroidManifest.xml:20:5-44
-MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\af9af86a2035b10a0514f89f66cf8a9a\versionedparcelable-1.1.0\AndroidManifest.xml:20:5-22:41
-MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\af9af86a2035b10a0514f89f66cf8a9a\versionedparcelable-1.1.0\AndroidManifest.xml:20:5-22:41
 MERGED from [androidx.arch.core:core-runtime:2.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\943631e3c5a6dfa67bece88add1d3fe3\core-runtime-2.0.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.arch.core:core-runtime:2.0.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\943631e3c5a6dfa67bece88add1d3fe3\core-runtime-2.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\af9af86a2035b10a0514f89f66cf8a9a\versionedparcelable-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\af9af86a2035b10a0514f89f66cf8a9a\versionedparcelable-1.1.0\AndroidManifest.xml:20:5-22:41
 MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.1.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\2b6a4e71d38d3b36d0c903aac26cfd25\lifecycle-viewmodel-2.1.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.1.0] C:\Users\Jacek\.gradle\caches\transforms-2\files-2.1\2b6a4e71d38d3b36d0c903aac26cfd25\lifecycle-viewmodel-2.1.0\AndroidManifest.xml:20:5-44
 INJECTED from D:\PROJEKTY\flt\finadv\android\app\src\debug\AndroidManifest.xml

@@ -4,11 +4,11 @@ import 'dart:convert';
 import 'package:finadv/model/FinanceEntry.dart';
 import 'package:finadv/service/LocalStorage.dart';
 import 'package:finadv/service/PersistingService.dart';
-import 'package:finadv/utils/HttpRequests.dart' as req;
+import 'package:finadv/utils/Constants.dart';
+import 'package:finadv/utils/HttpRequests.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FinanceDetailsCard extends StatefulWidget {
@@ -26,93 +26,112 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
   final lowerValorController = TextEditingController();
   final nameController = TextEditingController();
 
-  Future<List<FinanceEntry>>? _financeEntries;
+  List<FinanceEntry>? _financeEntries;
   Stopwatch stpwatch = Stopwatch();
 
 
   @override
   void initState() {
     super.initState();
-    this._financeEntries = fetchData(widget.personName);
+    this.refreshData();
   }
 
-  void refreshData() {
-    setState(() {
-      this._financeEntries = fetchData(widget.personName);
-    });
+  void refreshData() async {
+    try {
+      var financeEntryList = await fetchDataAndSaveTotal(widget.personName);
+      setState(() {
+        this._financeEntries = financeEntryList;
+      });
+    } catch (e) {
+      print(e);
+      print('jest kurwa~!!');
+    }
   }
 
   Future<List<FinanceEntry>> fetchData(String personName) async {
     //
     List<String> savedRecords = await LocalStorage.getSavedRecords();
-    print(savedRecords.length);
-    // to będzie dawało nam ile jest do wysłania - do zakładki to zrobić 13 listopada
 
+    var map = savedRecords.map((element) {
+      return FinanceEntry.fromJsonString(element);
+    }).where((element) => element.personName == personName);
+
+    print(map);
+    print(map.length);
+  }
+
+  Future<List<FinanceEntry>> fetchDataAndSaveTotal(String personName) async {
+    await Future.delayed(Duration(milliseconds: 150));
     List<Future> futures = [
-      waitForResponse(),
-      req.getFinanceEntriesFor(personName)
+      HttpRequests.waitForResponseInSeconds(seconds: 3),
+      HttpRequests.getFinanceEntriesFor(personName)
     ];
 
     var response = await Future.any(futures);
-    if (response is Response) {
-      List<FinanceEntry> entryList = [];
-      final prefs = await SharedPreferences.getInstance();
 
-      if (response.statusCode == 200) {
-        prefs.setString(widget.personName, response.body);
+    List<FinanceEntry> entryList = [];
 
-        jsonDecode(response.body).forEach((element) {
-          entryList.add(FinanceEntry.fromJson(element));
-        });
-      }
+    if (response.statusCode == 200) {
+      jsonDecode(response.body).forEach((element) {
+        entryList.add(FinanceEntry.fromJsonMap(element));
+      });
 
-      return entryList;
-
-    } else {
-      throw Error();
+      await _saveTotalInLocalStorage(entryList);
     }
+
+    return entryList;
   }
 
-  Future<void> waitForResponse() async {
-    await Future.delayed(Duration(seconds: 3));
+  Future<void> _saveTotalInLocalStorage(List<FinanceEntry> entryList) async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString(widget.personName, getSumOfAllEntries(entryList));
   }
+
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.indigoAccent,
         title: Text(widget.personName),
         actions: <Widget>[
+          IconButton(
+            icon: Icon(
+              Icons.airplane_ticket_rounded,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => DataToSendScreen()));
+              // fetchDataToSend(widget.personName);
+            },
+          ),
           IconButton(
             icon: Icon(
               Icons.refresh,
               color: Colors.white,
             ),
             onPressed: () {
-              req.clearAllEntries();
+              HttpRequests.clearAllEntries();
               setState(() {});
             },
           )
         ],
       ),
-      backgroundColor: setProperColor(widget.personName),
+      backgroundColor: Colors.white60,
       body: Center(
         child: Padding(
           padding: EdgeInsets.all(8.0),
           child: FutureBuilder(
-              future: fetchData(widget.personName),
+              future: fetchDataAndSaveTotal(widget.personName),
               builder: (builder, snapshot) {
-                if (snapshot.hasError) return Text("no connection - check if correct wifi and localization on!");
-
-                return snapshot.connectionState == ConnectionState.waiting
-                    ? Center(child: CircularProgressIndicator())
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          renderLastPaymentsWidget(snapshot.data, context),
-                          totalWidget(snapshot.data),
-                        ],
-                      );
+                if (snapshot.hasError)
+                  return Text("Could not get data!");
+                return RefreshIndicator(
+                    onRefresh: _refresh,
+                    child: _paymentListView(snapshot, context)
+                );
               }),
         ),
       ),
@@ -124,13 +143,53 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
     );
   }
 
+  Widget _paymentListView(AsyncSnapshot<Object?> snapshot, BuildContext context) {
+    if (snapshot.hasError)
+      _noConnectionWidget(context);
+
+    if (snapshot.connectionState == ConnectionState.done) {
+      return Container(
+        height: Constants.getDeviceHeightForList(context),
+        width: Constants.getDeviceWidthForList(context),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            renderLastPaymentsWidget(snapshot.data, context),
+            totalWidget(snapshot.data),
+          ],
+        ),
+      );
+    }
+
+    else
+      return Center(child: CircularProgressIndicator());
+  }
+
+  SingleChildScrollView _noConnectionWidget(BuildContext context) {
+    return SingleChildScrollView(
+      physics: AlwaysScrollableScrollPhysics(),
+      child: Container(
+          width: Constants.getDeviceWidthForList(context),
+          height: Constants.getDeviceHeightForList(context),
+          child: Column(
+            children: [
+              Expanded(
+                flex: 1,
+                child: Text(
+                    "no connection - check if correct wifi and localization on!"),
+              ),
+            ],
+          )),
+    );
+  }
+
   Widget totalWidget(amount) {
     var list = amount as List<FinanceEntry>;
 
     return Column(
       children: [
-        Text("Total: ", style: TextStyle(color: Colors.green)),
-        Text(getSumOfAllEntries(list), style: TextStyle(color: Colors.green)),
+        Text("Total: ", style: TextStyle(color: Colors.lightGreenAccent, fontWeight: FontWeight.bold)),
+        Text(getSumOfAllEntries(list), style: TextStyle(color: Colors.lightGreenAccent, fontWeight: FontWeight.bold, fontSize: 20)),
       ],
     );
   }
@@ -170,52 +229,15 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
           return StatefulBuilder(
             builder: (context, setState) {
               return AlertDialog(
-                title: Text('Amount:'),
+                title: Text('New Entity:'),
                 content: Form(
                   key: _formKey,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Padding(
-                          padding: EdgeInsets.all(32.0),
-                          child: Text(DateTime.now().toString())),
-                      TextFormField(
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(
-                              RegExp(r'^[-0-9 ]+$'))
-                        ],
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter some text';
-                          }
-                          return null;
-                        },
-                        controller: higherValorController,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: 'zł',
-                        ),
-                      ),
-                      TextFormField(
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(
-                              RegExp(r'^[0-9]+$'))
-                        ],
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter some text';
-                          }
-                          return null;
-                        },
-                        controller: lowerValorController,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: 'gr',
-                        ),
-                      ),
-
+                      Text(getCurrentDate()),
+                      _currencyAmountInputFields(),
+                      SizedBox(height: 5),
                       TextFormField(
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -238,22 +260,84 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
         });
   }
 
+  Row _currencyAmountInputFields() {
+    return Row(
+      children: [
+        Flexible(
+          child: Container(
+            child: TextFormField(
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^[-0-9]+$'))
+              ],
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter some text';
+                }
+                return null;
+              },
+              controller: higherValorController,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'zł',
+              ),
+            ),
+          ),
+        ),
+        SizedBox(width: 5),
+        Flexible(
+          child: Container(
+            child: TextFormField(
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'\d\d'))
+              ],
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter some text';
+                }
+                return null;
+              },
+              controller: lowerValorController,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'gr',
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String getCurrentDate() {
+    DateTime now = DateTime.now();
+    String minutes = now.minute.toString().length == 1
+        ? '0${now.minute}'
+        : now.minute.toString();
+    String date = '${now.year}-${now.month}-${now.day} ${now.hour}:${minutes}';
+    return date;
+  }
+
   int getAmountFromDialog() {
     return int.parse(higherValorController.text) * 100 +
-    int.parse(lowerValorController.text);
+        int.parse(lowerValorController.text);
+  }
+
+  Future<void> _refresh() {
+    this.refreshData();
+    return Future.delayed(Duration(seconds: 1));
   }
 
   Widget renderLastPaymentsWidget(_paymentList, context) {
     var actionsAmount = _paymentList?.length ?? 0;
     var deviceWidth = MediaQuery.of(context).size.width;
-    List<FinanceEntry> paymentList = _paymentList as List<FinanceEntry>;
+
+    late List<FinanceEntry> paymentList = _paymentList as List<FinanceEntry>;
 
     return actionsAmount == 0
         ? Center(child: Text('Nothing to show'))
         : Container(
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.all(Radius.circular(10)),
-                color: Colors.black26),
             width: deviceWidth * 0.95,
             child: ListView.builder(
                 shrinkWrap: true,
@@ -269,15 +353,15 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
                             context: context,
                             position: RelativeRect.fill,
                             items: <PopupMenuEntry>[
-                              menuItem('delete'),
-                              menuItem('edit')
+                              menuItem(Constants.DELETE),
+                              menuItem(Constants.EDIT)
                             ]);
 
                         await _performAction(name, currentElement);
                         setState(() {});
                       },
                       child: Card(
-                        color: Colors.grey,
+                        color: Colors.white70,
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
                           child: (Column(
@@ -290,7 +374,8 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
                                   _timeWidget(currentElement),
                                   Text(currentElement.floatingAmount,
                                       style: TextStyle(
-                                          fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                          fontSize: 18,
                                           color: currentElement.amount >= 0
                                               ? Colors.green
                                               : Colors.redAccent)),
@@ -307,7 +392,7 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
   }
 
   PopupMenuItem<dynamic> menuItem(String value) {
-    IconData icon = value == 'edit' ? Icons.edit : Icons.delete;
+    IconData icon = value == Constants.EDIT ? Icons.edit : Icons.delete;
     return PopupMenuItem(
       value: value,
       child: Row(
@@ -320,12 +405,12 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
   }
 
   Color setProperColor(String cardName) {
-    switch (cardName.toLowerCase()) {
-      case 'pau':
+    switch (cardName) {
+      case Constants.PAU:
         return Colors.deepPurple;
-      case 'jack':
+      case Constants.JACK:
         return Colors.white10;
-      case 'podsumowanie':
+      case Constants.SUM_UP:
         return Colors.blue;
       default:
         return Colors.deepPurple;
@@ -337,8 +422,9 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
 
     String jsonOfEntry = jsonEncode(financeEntry);
 
-    if (name == 'delete') await PersistingService.deleteEntity(jsonOfEntry);
-    if (name == 'edit') await PersistingService.editEntity(jsonOfEntry);
+    if (name == Constants.DELETE)
+      await PersistingService.deleteEntity(jsonOfEntry);
+    if (name == Constants.EDIT) await PersistingService.editEntity(jsonOfEntry);
   }
 
   Widget _timeWidget(currentElement) {
@@ -368,4 +454,13 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
 
     return hour + ':' + minute;
   }
+
+  // Future<List<FinanceEntry>> fetchLocalData(String personName) async {
+  //   List<FinanceEntry> list =
+  //       await LocalStorage.getLocallyEntitiesFromServer(personName);
+  //   if (list.isEmpty)
+  //     throw Error();
+  //   else
+  //     return list;
+  // }
 }
