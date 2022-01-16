@@ -4,7 +4,8 @@ class LocalStorage {
   static Future<bool> saveEntityLocally(String json) async {
     SharedPreferences db = await SharedPreferences.getInstance();
 
-    db.setString('Local ' + DateTime.now().toString(), json);
+    int indexOfLastDot = 19;
+    db.setString('Local ' + DateTime.now().toString().substring(0, indexOfLastDot), json);
 
     return Future.value(true);
   }
@@ -44,6 +45,14 @@ class LocalStorage {
     }
 
     return encodedJsons;
+  }
+
+  static Future<void> removeRecordFromLocal(FinanceEntry entry) async {
+    SharedPreferences db = await SharedPreferences.getInstance();
+
+    var keyToDelete = 'Local ' + entry.date.substring(0, 19);
+
+    db.remove(keyToDelete);
   }
 
   static void showAll() async {

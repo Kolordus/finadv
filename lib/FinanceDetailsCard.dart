@@ -48,18 +48,6 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
     }
   }
 
-  Future<List<FinanceEntry>> fetchData(String personName) async {
-    //
-    List<String> savedRecords = await LocalStorage.getSavedRecords();
-
-    var map = savedRecords.map((element) {
-      return FinanceEntry.fromJsonString(element);
-    }).where((element) => element.personName == personName);
-
-    print(map);
-    print(map.length);
-  }
-
   Future<List<FinanceEntry>> fetchDataAndSaveTotal(String personName) async {
     await Future.delayed(Duration(milliseconds: 150));
     List<Future> futures = [
@@ -87,8 +75,6 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
     prefs.setString(widget.personName, getSumOfAllEntries(entryList));
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -96,17 +82,6 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
         backgroundColor: Colors.indigoAccent,
         title: Text(widget.personName),
         actions: <Widget>[
-          IconButton(
-            icon: Icon(
-              Icons.airplane_ticket_rounded,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => DataToSendScreen()));
-              // fetchDataToSend(widget.personName);
-            },
-          ),
           IconButton(
             icon: Icon(
               Icons.refresh,
@@ -127,11 +102,19 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
               future: fetchDataAndSaveTotal(widget.personName),
               builder: (builder, snapshot) {
                 if (snapshot.hasError)
-                  return Text("Could not get data!");
+                  return RefreshIndicator(
+                    onRefresh: _refresh,
+                    child: SingleChildScrollView(
+                        physics: AlwaysScrollableScrollPhysics(),
+                        child: Container(
+                          height: Constants.getDeviceHeightForList(context),
+                            child: Center(
+                                child: Text("Could not get data!")))
+                    ),
+                  );
                 return RefreshIndicator(
                     onRefresh: _refresh,
-                    child: _paymentListView(snapshot, context)
-                );
+                    child: _paymentListView(snapshot, context));
               }),
         ),
       ),
@@ -144,8 +127,7 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
   }
 
   Widget _paymentListView(AsyncSnapshot<Object?> snapshot, BuildContext context) {
-    if (snapshot.hasError)
-      _noConnectionWidget(context);
+    if (snapshot.hasError) _noConnectionWidget(context);
 
     if (snapshot.connectionState == ConnectionState.done) {
       return Container(
@@ -159,9 +141,7 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
           ],
         ),
       );
-    }
-
-    else
+    } else
       return Center(child: CircularProgressIndicator());
   }
 
@@ -188,8 +168,14 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
 
     return Column(
       children: [
-        Text("Total: ", style: TextStyle(color: Colors.lightGreenAccent, fontWeight: FontWeight.bold)),
-        Text(getSumOfAllEntries(list), style: TextStyle(color: Colors.lightGreenAccent, fontWeight: FontWeight.bold, fontSize: 20)),
+        Text("Total: ",
+            style: TextStyle(
+                color: Colors.lightGreenAccent, fontWeight: FontWeight.bold)),
+        Text(getSumOfAllEntries(list),
+            style: TextStyle(
+                color: Colors.lightGreenAccent,
+                fontWeight: FontWeight.bold,
+                fontSize: 20)),
       ],
     );
   }
@@ -289,9 +275,9 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
           child: Container(
             child: TextFormField(
               keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'\d\d'))
-              ],
+              // inputFormatters: [
+              //   FilteringTextInputFormatter.allow(RegExp(r'\d\d'))
+              // ],
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Please enter some text';
@@ -325,6 +311,7 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
   }
 
   Future<void> _refresh() {
+    PersistingService.sendLocallySaved();
     this.refreshData();
     return Future.delayed(Duration(seconds: 1));
   }
@@ -374,7 +361,7 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
                                   _timeWidget(currentElement),
                                   Text(currentElement.floatingAmount,
                                       style: TextStyle(
-                                        fontWeight: FontWeight.bold,
+                                          fontWeight: FontWeight.bold,
                                           fontSize: 18,
                                           color: currentElement.amount >= 0
                                               ? Colors.green
@@ -419,12 +406,58 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
 
   Future<void> _performAction(name, FinanceEntry financeEntry) async {
     if (name == null) return;
-
-    String jsonOfEntry = jsonEncode(financeEntry);
-
     if (name == Constants.DELETE)
-      await PersistingService.deleteEntity(jsonOfEntry);
-    if (name == Constants.EDIT) await PersistingService.editEntity(jsonOfEntry);
+      await PersistingService.deleteEntity(financeEntry);
+    if (name == Constants.EDIT) {
+      Widget okButton = ElevatedButton(
+          onPressed: () async {
+            if (_formKey.currentState!.validate()) {}
+
+            FinanceEntry updatedEntry = FinanceEntry(widget.personName,
+                financeEntry.date, nameController.text, getAmountFromDialog());
+
+            await PersistingService.editEntity(updatedEntry);
+
+            Navigator.pop(context);
+            setState(() {});
+          },
+          child: Text('Ok'));
+
+      showDialog(
+          context: context,
+          builder: (context) {
+            return StatefulBuilder(
+              builder: (context, setState) {
+                return AlertDialog(
+                  title: Text('Edit Entity:'),
+                  content: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _currencyAmountInputFields(),
+                        SizedBox(height: 5),
+                        TextFormField(
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter some text';
+                            }
+                            return null;
+                          },
+                          controller: nameController,
+                          decoration: InputDecoration(
+                              border: OutlineInputBorder(),
+                              hintText: 'Operation name'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [okButton],
+                );
+              },
+            );
+          });
+    }
   }
 
   Widget _timeWidget(currentElement) {
@@ -455,12 +488,12 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
     return hour + ':' + minute;
   }
 
-  // Future<List<FinanceEntry>> fetchLocalData(String personName) async {
-  //   List<FinanceEntry> list =
-  //       await LocalStorage.getLocallyEntitiesFromServer(personName);
-  //   if (list.isEmpty)
-  //     throw Error();
-  //   else
-  //     return list;
-  // }
+// Future<List<FinanceEntry>> fetchLocalData(String personName) async {
+//   List<FinanceEntry> list =
+//       await LocalStorage.getLocallyEntitiesFromServer(personName);
+//   if (list.isEmpty)
+//     throw Error();
+//   else
+//     return list;
+// }
 }

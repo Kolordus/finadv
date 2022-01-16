@@ -6,6 +6,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'DataToSendScreen.dart';
+
 class SummaryCard extends StatefulWidget {
   final List<String>? persons;
 
@@ -35,7 +37,7 @@ class _SummaryCardState extends State<SummaryCard> {
         builder: (context, snapshot) {
           if (snapshot.hasError)
             return Center(
-                child: Text('Empty', style: TextStyle(color: Colors.black)));
+                child: Text('Empty', style: TextStyle(color: Colors.white)));
 
           return snapshot.connectionState == ConnectionState.waiting
               ? Center(child: CircularProgressIndicator())
@@ -46,6 +48,10 @@ class _SummaryCardState extends State<SummaryCard> {
   Future<Balance> _getBalanceAndTotals() async {
     Balance newestBalance = Balance.EMPTY_OBJ;
 
+    prefs = await SharedPreferences.getInstance();
+    pauTotal = prefs.getString(Constants.PAU);
+    jacTotal = prefs.getString(Constants.JACK);
+
     try {
       List<Future> futures = [
         HttpRequests.waitForResponseInSeconds(seconds: 3),
@@ -54,14 +60,12 @@ class _SummaryCardState extends State<SummaryCard> {
 
       var response = await Future.any(futures);
 
-      prefs = await SharedPreferences.getInstance();
-      pauTotal = await prefs.getString(Constants.PAU);
-      jacTotal = await prefs.getString(Constants.JACK);
 
       if (response.statusCode == 200) {
         var json = jsonDecode(response.body);
         newestBalance = Balance.fromJson(json);
         prefs.setString("balance", response.body);
+
       }
     } catch (e) {
       var fromLocalStorage = Balance.fromJson(jsonDecode(prefs.getString("balance")!));
@@ -80,6 +84,17 @@ class _SummaryCardState extends State<SummaryCard> {
         title: Text('Bilans'),
         backgroundColor: Colors.indigoAccent,
         actions: <Widget>[
+          IconButton(
+            icon: Icon(
+              Icons.airplane_ticket_rounded,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => DataToSendScreen()));
+              // fetchDataToSend(widget.personName);
+            },
+          ),
           IconButton(
               icon: Icon(Icons.warning_amber_sharp, color: Colors.white),
               onPressed: () {
