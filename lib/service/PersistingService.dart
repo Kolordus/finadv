@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:android_intent/android_intent.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:finadv/model/FinanceEntry.dart';
+import 'package:finadv/utils/HttpRequests.dart';
 import 'package:http/http.dart';
-import 'package:http/http.dart' as http;
 import 'package:wifi_info_flutter/wifi_info_flutter.dart';
 
 import 'LocalStorage.dart';
@@ -22,9 +22,17 @@ class PersistingService {
       response = await LocalStorage.saveEntityLocally(encodedJson);
     }
 
-    if (response is Response)
-      return response.statusCode == 201 ? 'success' : 'failed';
+    if (response is Response) {
+      return response.statusCode == 201 ? 'success' : _getErrorMessage(response.body);
+    }
 
+    return response == true ? 'success' : 'failed';
+  }
+
+  static String _getErrorMessage(String body) {
+    Map<String, dynamic> responseJson = jsonDecode(body);
+    String errorMessage = responseJson.remove('message')!;
+    return errorMessage;
   }
 
   static Future<void> sendLocallySaved() async {
@@ -43,12 +51,11 @@ class PersistingService {
   }
 
   static Future<bool> _canSend() async {
-    String desiredWiFiName = "Senatus Populusque Internetum";
-
     var connectivityResult = await Connectivity().checkConnectivity();
     var wifiName = await WifiInfo().getWifiName();
 
-    if (connectivityResult == ConnectivityResult.wifi && wifiName == Constants.DESIRED_WIFI) {
+    // if (connectivityResult == ConnectivityResult.wifi && wifiName == Constants.DESIRED_WIFI) {
+    if (connectivityResult == ConnectivityResult.wifi) {
       return true;
     }
 
@@ -63,27 +70,15 @@ class PersistingService {
   }
 
   static Future<Response> _sendToServer(String encodedJson) async {
-    return await http.Client().post(
-      Uri.parse('http://192.168.0.87:8080/finance'),
-      headers: {'Content-type': 'application/json'},
-      body: encodedJson,
-    );
+    return await HttpRequests.saveFinanceEntry(encodedJson);
   }
 
-  static Future<Response> deleteEntity(String encodedJson) async {
-    return await http.Client().delete(
-      Uri.parse('http://192.168.0.87:8080/finance/entry'),
-      headers: {'Content-type': 'application/json'},
-      body: encodedJson,
-    );
+  static Future<Response> deleteEntity(FinanceEntry financeEntry) async {
+    return await HttpRequests.deleteFinanceEntry(jsonEncode(financeEntry));
   }
 
-  static Future<Response> editEntity(String encodedJson) async {
-    return await http.Client().put(
-      Uri.parse('http://192.168.0.87:8080/finance'),
-      headers: {'Content-type': 'application/json'},
-      body: encodedJson,
-    );
+  static Future<Response> editEntity(FinanceEntry entry) async {
+    return await HttpRequests.editFinanceEntry(jsonEncode(entry.toJson()));
   }
 
 }

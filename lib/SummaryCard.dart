@@ -111,7 +111,7 @@ class _SummaryCardState extends State<SummaryCard> {
           children: [
             Container(
               width: Constants.getDeviceWidthForList(context) * 0.9,
-              height: Constants.getDeviceHeightForList(context) * 0.3,
+              height: Constants.getDeviceHeightForList(context) * 0.5,
               child: Card(
                 color: Colors.white70,
                 child: Column(

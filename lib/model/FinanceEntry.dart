@@ -1,30 +1,44 @@
 
+
+import 'dart:convert';
+import 'dart:core' as std;
+
 class FinanceEntry {
-  final String personName;
-  final String date;
-  final String name;
-  final int amount;
+  final std.String personName;
+  final std.String date;
+  final std.String operationName;
+  final std.int amount;
 
-  FinanceEntry(this.personName, this.date, this.name, this.amount);
+  FinanceEntry(this.personName, this.date, this.operationName, this.amount);
 
-  String get floatingAmount => (amount / 100).toString();
+  std.String get floatingAmount => (amount / 100).toString();
 
-  Map<String, Object?> toJson() => {
+  std.Map<std.String, std.Object?> toJson() => {
     'personName': personName,
-    'name': name,
+    'operationName': operationName,
     'date': date,
     'amount': amount,
   };
 
-  static FinanceEntry fromJson(Map json) => FinanceEntry(
-    json['personName'] as String,
-    json['date'] as String,
-    json['name'] as String,
-    json['amount'] as int
+  static FinanceEntry fromJsonMap(std.Map json) => FinanceEntry(
+    json['personName'] as std.String,
+    json['date'] as std.String,
+    json['operationName'] as std.String,
+    json['amount'] as std.int
    );
 
-  @override
-  String toString() {
-    return 'FinanceEntry{personName: $personName, date: $date, name: $name, amount: $amount}';
+  static FinanceEntry fromJsonString (std.String json) {
+    std.Map<std.String, std.Object> jsonMap = jsonDecode(json);
+    return FinanceEntry.fromJsonMap(jsonMap);
+  }
+
+  @std.override
+  std.String toString() {
+    return 'FinanceEntry{personName: $personName, date: $date, name: $operationName, amount: $amount}';
+  }
+
+  @std.override
+  std.int get hashCode {
+    return std.Object.hash(this.personName, this.floatingAmount, this.date, this.amount, this.operationName);
   }
 }

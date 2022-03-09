@@ -1,15 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
-
+import 'package:finadv/StepperInputScreenForFinance.dart';
 import 'package:finadv/model/FinanceEntry.dart';
-import 'package:finadv/service/LocalStorage.dart';
 import 'package:finadv/service/PersistingService.dart';
 import 'package:finadv/utils/Constants.dart';
 import 'package:finadv/utils/HttpRequests.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:finadv/RequestsPage.dart';
 
 class FinanceDetailsCard extends StatefulWidget {
   FinanceDetailsCard({Key? key, required this.personName}) : super(key: key);
@@ -28,7 +27,6 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
 
   List<FinanceEntry>? _financeEntries;
   Stopwatch stpwatch = Stopwatch();
-
 
   @override
   void initState() {
@@ -50,14 +48,13 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
 
   Future<List<FinanceEntry>> fetchDataAndSaveTotal(String personName) async {
     await Future.delayed(Duration(milliseconds: 150));
+    List<FinanceEntry> entryList = [];
+
     List<Future> futures = [
       HttpRequests.waitForResponseInSeconds(seconds: 3),
       HttpRequests.getFinanceEntriesFor(personName)
     ];
-
     var response = await Future.any(futures);
-
-    List<FinanceEntry> entryList = [];
 
     if (response.statusCode == 200) {
       jsonDecode(response.body).forEach((element) {
@@ -78,10 +75,21 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: Colors.indigoAccent,
         title: Text(widget.personName),
         actions: <Widget>[
+          IconButton(
+            icon: Icon(
+              Icons.request_page,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => RequestsPage.createRequestPage(widget.personName)));
+            },
+          ),
           IconButton(
             icon: Icon(
               Icons.refresh,
@@ -107,10 +115,8 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
                     child: SingleChildScrollView(
                         physics: AlwaysScrollableScrollPhysics(),
                         child: Container(
-                          height: Constants.getDeviceHeightForList(context),
-                            child: Center(
-                                child: Text("Could not get data!")))
-                    ),
+                            height: Constants.getDeviceHeightForList(context),
+                            child: Center(child: Text("Could not get data!")))),
                   );
                 return RefreshIndicator(
                     onRefresh: _refresh,
@@ -119,7 +125,16 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: createEntry,
+        // onPressed: createEntry,
+        onPressed: () {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) =>
+                      StepperInputScreenForFinance(widget.personName, DateTime.now()))
+          );
+          // fetchDataToSend(widget.personName);
+        },
         child: const Icon(Icons.add),
         backgroundColor: Colors.green,
       ),
@@ -164,14 +179,12 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
   }
 
   Widget totalWidget(amount) {
-    var list = amount as List<FinanceEntry>;
-
     return Column(
       children: [
         Text("Total: ",
             style: TextStyle(
                 color: Colors.lightGreenAccent, fontWeight: FontWeight.bold)),
-        Text(getSumOfAllEntries(list),
+        Text(getSumOfAllEntries(amount),
             style: TextStyle(
                 color: Colors.lightGreenAccent,
                 fontWeight: FontWeight.bold,
@@ -218,25 +231,26 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
                 title: Text('New Entity:'),
                 content: Form(
                   key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(getCurrentDate()),
-                      _currencyAmountInputFields(),
-                      SizedBox(height: 5),
-                      TextFormField(
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter some text';
-                          }
-                          return null;
-                        },
-                        controller: nameController,
-                        decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            hintText: 'Operation name'),
-                      ),
-                    ],
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _currencyAmountInputFields(),
+                        SizedBox(height: 5),
+                        TextFormField(
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter some text';
+                            }
+                            return null;
+                          },
+                          controller: nameController,
+                          decoration: InputDecoration(
+                              border: OutlineInputBorder(),
+                              hintText: 'Operation name'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 actions: [okButton],
@@ -344,7 +358,7 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
                               menuItem(Constants.EDIT)
                             ]);
 
-                        await _performAction(name, currentElement);
+                        await _performSelectedAction(name, currentElement);
                         setState(() {});
                       },
                       child: Card(
@@ -357,7 +371,7 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(currentElement.name),
+                                  Text(currentElement.operationName),
                                   _timeWidget(currentElement),
                                   Text(currentElement.floatingAmount,
                                       style: TextStyle(
@@ -404,7 +418,7 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
     }
   }
 
-  Future<void> _performAction(name, FinanceEntry financeEntry) async {
+  Future<void> _performSelectedAction(name, FinanceEntry financeEntry) async {
     if (name == null) return;
     if (name == Constants.DELETE)
       await PersistingService.deleteEntity(financeEntry);

@@ -3,6 +3,7 @@ import 'package:finadv/service/PersistingService.dart';
 import 'package:finadv/service/LocalStorage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'dart:core' as std;
 
 import 'SummaryCard.dart';
 
@@ -14,7 +15,7 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
-  @override
+  @std.override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -29,27 +30,25 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key? key, required this.title}) : super(key: key);
-  final String title;
+  final std.String title;
 
-  @override
+  @std.override
   _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
-
-  int _selectedIndex = 0;
+  std.int _selectedIndex = 0;
   PageController pageController = PageController(initialPage: 0);
 
-  void _onItemTapped(int index) {
+  void _onItemTapped(std.int index) {
     setState(() {
       _selectedIndex = index;
       pageController.animateToPage(index,
-          duration: Duration(milliseconds: 200), curve: Curves.bounceInOut);
+          duration: std.Duration(milliseconds: 200), curve: Curves.bounceInOut);
     });
   }
 
-  @override
+  @std.override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black12,
