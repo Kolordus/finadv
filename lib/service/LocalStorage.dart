@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:finadv/model/FinanceEntry.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalStorage {
@@ -66,4 +69,24 @@ class LocalStorage {
       if (value.contains("Local")) print(value);
     }
   }
+
+  static Future<String> getTotalForName(String personName) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(personName).toString();
+  }
+
+// static Future<List<FinanceEntry>> getLocallyEntitiesFromServer(String personName) async {
+//   SharedPreferences db = await SharedPreferences.getInstance();
+//   String string = db.getString(personName)!;
+//   List jsonList = jsonDecode(string);
+//
+//   List<FinanceEntry> list = [];
+//
+//   jsonList.forEach((element) {
+//     list.add(FinanceEntry.fromJsonMap(element));
+//   });
+//
+//   return list;
+// }
+
 }

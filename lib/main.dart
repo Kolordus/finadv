@@ -1,7 +1,7 @@
 import 'package:finadv/FinanceDetailsCard.dart';
 import 'package:finadv/service/PersistingService.dart';
 import 'package:finadv/service/LocalStorage.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:finadv/utils/Constants.dart';
 import 'package:flutter/material.dart';
 import 'dart:core' as std;
 
@@ -60,15 +60,15 @@ class _MyHomePageState extends State<MyHomePage> {
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
               icon: Icon(Icons.accessibility_sharp),
-              label: 'Pau'
+              label: Constants.PAU
           ),
           BottomNavigationBarItem(
               icon: Icon(Icons.accessible),
-              label: "Jack"
+              label: Constants.JACK
           ),
           BottomNavigationBarItem(
               icon: Icon(Icons.attach_money),
-              label: 'Podsumowanie'
+              label: Constants.SUM_UP
           ),
         ],
       ),
@@ -80,9 +80,9 @@ class _MyHomePageState extends State<MyHomePage> {
           })
         },
         children: [
-          FinanceDetailsCard(personName: 'Pau'),
-          FinanceDetailsCard(personName: 'Jack'),
-          SummaryCard(persons: ['Pau', "Jack"],),
+          FinanceDetailsCard(personName: Constants.PAU),
+          FinanceDetailsCard(personName: Constants.JACK),
+          SummaryCard(persons: [Constants.PAU, Constants.JACK],),
         ],
       )
     );
