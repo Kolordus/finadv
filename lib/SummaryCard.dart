@@ -59,8 +59,7 @@ class _SummaryCardState extends State<SummaryCard> {
 
       var response = await Future.any(futures);
 
-
-      if (response.statusCode == 200) {
+      if (response.statusCode != null && response.statusCode == 200) {
         var json = jsonDecode(response.body);
         newestBalance = Balance.fromJson(json);
         prefs.setString("balance", response.body);

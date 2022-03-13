@@ -54,9 +54,10 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
       HttpRequests.waitForResponseInSeconds(seconds: 3),
       HttpRequests.getFinanceEntriesFor(personName)
     ];
+
     var response = await Future.any(futures);
 
-    if (response.statusCode == 200) {
+    if (response.statusCode != null && response.statusCode == 200) {
       jsonDecode(response.body).forEach((element) {
         entryList.add(FinanceEntry.fromJsonMap(element));
       });
@@ -116,7 +117,8 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
                         physics: AlwaysScrollableScrollPhysics(),
                         child: Container(
                             height: Constants.getDeviceHeightForList(context),
-                            child: Center(child: Text("Could not get data!")))),
+                            child: Center(child: Text("Could not get data!\nPull down to reload",
+                            style: TextStyle(color: Colors.white))))),
                   );
                 return RefreshIndicator(
                     onRefresh: _refresh,
@@ -126,13 +128,15 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
       ),
       floatingActionButton: FloatingActionButton(
         // onPressed: createEntry,
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          var result = await Navigator.push(
               context,
               MaterialPageRoute(
                   builder: (context) =>
                       StepperInputScreenForFinance(widget.personName, DateTime.now()))
           );
+
+          setState(() {});
           // fetchDataToSend(widget.personName);
         },
         child: const Icon(Icons.add),

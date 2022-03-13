@@ -70,7 +70,7 @@ class HttpRequests {
   }
 
   static deleteStuffRequest(String date) {
-    return http.Client().delete(Uri.parse(_SERVER_ADDRESS + _REQUESTS + '&date=' + date),
+    return http.Client().delete(Uri.parse(_SERVER_ADDRESS + _REQUESTS + '?date=' + date),
         headers: _CONTENT_TYPE_JSON,);
   }
 

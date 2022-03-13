@@ -11,10 +11,8 @@ class RequestsPage extends StatefulWidget {
 
   RequestsPage(this.personName);
 
-
   static RequestsPage createRequestPage(String personName) =>
-    RequestsPage(personName);
-
+      RequestsPage(personName);
 
   @override
   State<StatefulWidget> createState() => _RequestPageState();
@@ -24,7 +22,6 @@ class _RequestPageState extends State<RequestsPage> {
   List<StuffRequest> _stuffRequests = [];
   final _formKey = GlobalKey<FormState>();
   final operationNameController = TextEditingController();
-
 
   @override
   void initState() {
@@ -42,9 +39,6 @@ class _RequestPageState extends State<RequestsPage> {
   }
 
   void pullData() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // todo prefs!!
     try {
       var _stuffRequests = await fetchData();
       setState(() {
@@ -59,47 +53,49 @@ class _RequestPageState extends State<RequestsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Requests"),),
+      backgroundColor: Colors.blueGrey,
+      appBar: AppBar(
+        title: Text("Requests"),
+      ),
       floatingActionButton: OutlinedButton(
           onPressed: () async {
-
-            // var stuffRequest = StuffRequest(DateTime.now().toString(), "pau", "mockowa operacja!");
-            // await HttpRequests.saveStuffRequest(stuffRequest);
-
             this.createEntry();
           },
           style: ElevatedButton.styleFrom(
             shape: CircleBorder(),
           ),
-          child: Icon(Icons.fiber_new, size: 50, color: Colors.green,)
-      ),
-      body: Container(
-        color: Colors.blueGrey,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            children: [
-              FutureBuilder(
-                future: fetchData(),
-                builder: (builder, snapshot) {
-                  if (snapshot.hasError) return Text('no to dupsko');
-                  return GridView.builder(
-                      scrollDirection: Axis.vertical,
-                      shrinkWrap: true,
-                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 150,
-                          crossAxisSpacing: 0,
-                          mainAxisSpacing: 5),
-                      itemCount: _stuffRequests.length,
-                      itemBuilder: (BuildContext ctx, index) {
-                        return singleTile(_stuffRequests.elementAt(index));
-                      });
-              }
-              ),
-            ],
-          ),
+          child: Icon(
+            Icons.fiber_new,
+            size: 50,
+            color: Colors.green,
+          )),
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
+          color: Colors.blueGrey,
+          child: FutureBuilder(
+              future: fetchData(),
+              builder: (builder, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting)
+                  return Center(child: CircularProgressIndicator(color: Colors.red,));
+                if (snapshot.hasError)
+                  return Center(child: Text('No internet connection :(', style: TextStyle(fontSize: 20),));
+                if (snapshot.connectionState == ConnectionState.done && _stuffRequests.length == 0)
+                  return Center(child: Text('No requests', style: TextStyle(fontSize: 20),));
+                return GridView.builder(
+                    scrollDirection: Axis.vertical,
+                    shrinkWrap: true,
+                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 150,
+                        crossAxisSpacing: 0,
+                        mainAxisSpacing: 5),
+                    itemCount: _stuffRequests.length,
+                    itemBuilder: (BuildContext ctx, index) {
+                      return singleTile(_stuffRequests.elementAt(index));
+                    });
+              }),
         ),
-      ),
+      )
     );
   }
 
@@ -109,40 +105,50 @@ class _RequestPageState extends State<RequestsPage> {
       child: Container(
           alignment: Alignment.center,
           decoration: BoxDecoration(
-              color: Colors.black54,
-              borderRadius: BorderRadius.circular(15)
-          ),
+              color: Colors.black54, borderRadius: BorderRadius.circular(15)),
           child: Center(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Text(stuff.personName,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.blue,
-                        fontSize: 10,
-                        decoration: TextDecoration.none),),
-                  Text(stuff.date,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.blue,
-                        fontSize: 10,
-                        decoration: TextDecoration.none),),
-                  Text(stuff.operationName,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.blue,
-                        fontSize: 13,
-                        decoration: TextDecoration.none),),
-                  OutlinedButton(
-                      onPressed: () async {
-                        await HttpRequests.deleteStuffRequest(stuff.date);
-                        this.pullData();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        shape: CircleBorder(),
-                      ),
-                      child: Icon(Icons.cancel, size: 20, color: Colors.red,)
-                  )
-                ],
-              ))),
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Text(
+                stuff.personName,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: Colors.blue,
+                    fontSize: 10,
+                    decoration: TextDecoration.none),
+              ),
+              Text(
+                stuff.date,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: Colors.blue,
+                    fontSize: 10,
+                    decoration: TextDecoration.none),
+              ),
+              Text(
+                stuff.operationName,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: Colors.blue,
+                    fontSize: 13,
+                    decoration: TextDecoration.none),
+              ),
+              OutlinedButton(
+                  onPressed: () async {
+                    await HttpRequests.deleteStuffRequest(stuff.date);
+                    this.pullData();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    shape: CircleBorder(),
+                  ),
+                  child: Icon(
+                    Icons.cancel,
+                    size: 20,
+                    color: Colors.red,
+                  ))
+            ],
+          ))),
     );
   }
 
@@ -154,6 +160,7 @@ class _RequestPageState extends State<RequestsPage> {
       HttpRequests.waitForResponseInSeconds(seconds: 3),
       HttpRequests.getStuffRequests()
     ];
+
     var response = await Future.any(futures);
 
     if (response.statusCode == 200) {
@@ -167,7 +174,8 @@ class _RequestPageState extends State<RequestsPage> {
     return stuffList;
   }
 
-  Future<void> _saveStuffRequestsInLocalStorage(List<StuffRequest> stuffList) async {
+  Future<void> _saveStuffRequestsInLocalStorage(
+      List<StuffRequest> stuffList) async {
     final prefs = await SharedPreferences.getInstance();
     List<String> stuffRequestsList = [];
 
@@ -181,16 +189,15 @@ class _RequestPageState extends State<RequestsPage> {
   void createEntry() async {
     Widget okButton = ElevatedButton(
         onPressed: () async {
-          StuffRequest stuffRequest = StuffRequest(
-              DateTime.now().toString(),
-              widget.personName,
-              operationNameController.text
-          );
+          StuffRequest stuffRequest = StuffRequest(DateTime.now().toString(),
+              widget.personName, operationNameController.text);
 
           await HttpRequests.saveStuffRequest(stuffRequest);
 
           Navigator.pop(context);
-          setState(() { pullData(); });
+          setState(() {
+            pullData();
+          });
         },
         child: Text('Ok'));
 
@@ -231,5 +238,4 @@ class _RequestPageState extends State<RequestsPage> {
           );
         });
   }
-
 }

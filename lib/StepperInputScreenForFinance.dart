@@ -1,6 +1,8 @@
 import 'package:finadv/model/FinanceEntry.dart';
+import 'package:finadv/service/PersistingService.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:ui';
 
 class StepperInputScreenForFinance extends StatefulWidget {
   final String personName;
@@ -12,10 +14,11 @@ class StepperInputScreenForFinance extends StatefulWidget {
   State<StatefulWidget> createState() => _StepperInputScreenForFinanceState();
 }
 
-class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFinance> {
+class _StepperInputScreenForFinanceState
+    extends State<StepperInputScreenForFinance> {
   var _currentStep = 0;
   TextEditingController operationNameController = TextEditingController();
-  TextEditingController amountController = TextEditingController()..text = "0";
+  TextEditingController amountController = TextEditingController();
 
   tapped(int step) {
     setState(() => _currentStep = step);
@@ -23,15 +26,21 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
 
   continued() {
     var isFinalStep = _currentStep == stepList().length - 1;
+    var isNotComplete = amountController.text.isEmpty || operationNameController.text.isEmpty;
     if (isFinalStep) {
-      int amount = int.parse(amountController.text) * 100;
+      if (isNotComplete) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text("Form Incomplete!", textAlign: TextAlign.center,)));
+        return null;
+      }
+      String amount = amountController.text.replaceAll(".", "");
 
-      var financeEntry = FinanceEntry(widget.personName,
-          widget.now.toString(),
-          operationNameController.text,
-          amount);
+      var financeEntry = FinanceEntry(widget.personName, widget.now.toString(),
+          operationNameController.text, int.parse(amount));
 
-      Navigator.pop(context);
+      PersistingService.save(financeEntry);
+
+      Navigator.pop(context, financeEntry);
     }
     _currentStep < 2 ? setState(() => {_currentStep += 1}) : null;
   }
@@ -43,6 +52,7 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blueAccent,
       body: Stepper(
         physics: ScrollPhysics(),
         currentStep: _currentStep,
@@ -51,15 +61,18 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
         onStepCancel: cancel,
         steps: stepList(),
         controlsBuilder: (context, controlsDetails) {
-          var isFinalStep = _currentStep == stepList().length - 1;
+          bool isFinalStep = _currentStep == stepList().length - 1;
+
           return Container(
             child: Row(
               children: [
                 Expanded(
                   child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                        primary: Colors.green,
+                    ),
                     onPressed: continued,
-                    child:
-                        isFinalStep ? const Text("Finish") : const Text("Next"),
+                    child: isFinalStep ? const Text("Finish") : const Text("Next"),
                   ),
                 ),
                 const SizedBox(
@@ -68,6 +81,9 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
                 if (_currentStep > 0)
                   Expanded(
                     child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        primary: Colors.red,
+                      ),
                       onPressed: cancel,
                       child: const Text('Back'),
                     ),
@@ -82,32 +98,54 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
 
   List<Step> stepList() => [
         Step(
-          title: Text("Nazwa Operacji"),
+          title: Text(
+            "Nazwa Operacji",
+            style: TextStyle(color: Colors.white),
+          ),
           content: Column(
             children: [
-              TextField(decoration: InputDecoration(hintText: "Nazwa operacji"), controller: operationNameController),
+              TextField(
+                  decoration: InputDecoration(hintText: "Nazwa operacji"),
+                  controller: operationNameController),
             ],
           ),
           isActive: _currentStep >= 0,
           state: _currentStep >= 0 ? StepState.complete : StepState.disabled,
         ),
         Step(
-          title: Text("Kwota"),
+          title: Text("Kwota", style: TextStyle(color: Colors.white)),
           content: Column(
             children: [
-              TextField(decoration: InputDecoration(hintText: "złotych"), controller: amountController, inputFormatters: [FilteringTextInputFormatter.digitsOnly]),
+              TextField(
+                decoration: InputDecoration(hintText: "złotych"),
+                controller: amountController,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                onChanged: (text) {
+                  if (text.length > 2) {
+                    var pln = text.substring(0, text.length - 2);
+                    var gr = text.substring(text.length - 2);
+
+                    amountController.text = pln + '.' + gr;
+                    amountController.selection = TextSelection.fromPosition(
+                        TextPosition(offset: amountController.text.length));
+                  }
+                },
+              ),
             ],
           ),
           isActive: _currentStep >= 1,
           state: _currentStep >= 1 ? StepState.complete : StepState.disabled,
         ),
         Step(
-          title: Text("Podsumowanie"),
+          title: Text("Podsumowanie", style: TextStyle(color: Colors.white)),
           content: Column(
             children: [
               Text(widget.now.toLocal().toString().substring(0, 16)),
               Text(operationNameController.text),
-              Text((int.parse(amountController.text)).toString() + " PLN")
+              amountController.text.isNotEmpty
+                  ? Text(
+                      (double.parse(amountController.text)).toString() + " PLN")
+                  : Text("Form is incomplete!!", style: TextStyle(color: Colors.red, fontSize: 20),)
             ],
           ),
           isActive: _currentStep >= 2,
