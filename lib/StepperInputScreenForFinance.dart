@@ -15,8 +15,7 @@ class StepperInputScreenForFinance extends StatefulWidget {
 class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFinance> {
   var _currentStep = 0;
   TextEditingController operationNameController = TextEditingController();
-  TextEditingController zlAmountController = TextEditingController();
-  TextEditingController grAmountController = TextEditingController();
+  TextEditingController amountController = TextEditingController()..text = "0";
 
   tapped(int step) {
     setState(() => _currentStep = step);
@@ -25,14 +24,12 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
   continued() {
     var isFinalStep = _currentStep == stepList().length - 1;
     if (isFinalStep) {
-      int zl = int.parse(zlAmountController.text) * 100;
-      int gr = int.parse(grAmountController.text);
-      int fullAmount = zl + gr;
+      int amount = int.parse(amountController.text) * 100;
 
       var financeEntry = FinanceEntry(widget.personName,
           widget.now.toString(),
           operationNameController.text,
-          fullAmount);
+          amount);
 
       Navigator.pop(context);
     }
@@ -98,8 +95,7 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
           title: Text("Kwota"),
           content: Column(
             children: [
-              TextField(decoration: InputDecoration(hintText: "złotych"), controller: zlAmountController, inputFormatters: [FilteringTextInputFormatter.digitsOnly],),
-              TextField(decoration: InputDecoration(hintText: "groszy"), controller: grAmountController, keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly]),
+              TextField(decoration: InputDecoration(hintText: "złotych"), controller: amountController, inputFormatters: [FilteringTextInputFormatter.digitsOnly]),
             ],
           ),
           isActive: _currentStep >= 1,
@@ -111,9 +107,7 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
             children: [
               Text(widget.now.toLocal().toString().substring(0, 16)),
               Text(operationNameController.text),
-              Text((int.parse(zlAmountController.text)).toString() + ',' + (int.parse(grAmountController.text)).toString() + " PLN"
-              ),
-
+              Text((int.parse(amountController.text)).toString() + " PLN")
             ],
           ),
           isActive: _currentStep >= 2,

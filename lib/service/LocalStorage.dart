@@ -1,13 +1,18 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalStorage {
+
   static Future<bool> saveEntityLocally(String json) async {
     SharedPreferences db = await SharedPreferences.getInstance();
 
-    int indexOfLastDot = 19;
-    db.setString('Local ' + DateTime.now().toString().substring(0, indexOfLastDot), json);
+    await db.setString('Local ' + _currentDateWithoutMS(), json);
 
     return Future.value(true);
+  }
+
+  static String _currentDateWithoutMS() {
+    int indexOfLastDot = 19;
+    return DateTime.now().toString().substring(0, indexOfLastDot);
   }
 
   static Future<List<String>> getSavedRecords() async {

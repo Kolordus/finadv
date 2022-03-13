@@ -40,14 +40,13 @@ class PersistingService {
 
     var canSend = await _canSend();
     if (canSend) {
-
       List<String> savedRecords = await LocalStorage.getSavedRecordsAndRemove();
 
       for (String record in savedRecords)
         futures.add(_sendToServer(record));
     }
 
-    Future.wait(futures);
+    await Future.wait(futures);
   }
 
   static Future<bool> _canSend() async {
