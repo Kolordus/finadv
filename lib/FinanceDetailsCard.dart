@@ -24,6 +24,7 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
   final higherValorController = TextEditingController();
   final lowerValorController = TextEditingController();
   final nameController = TextEditingController();
+  bool foodFilter = false;
 
   List<FinanceEntry>? _financeEntries;
   Stopwatch stpwatch = Stopwatch();
@@ -82,13 +83,26 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
         title: Text(widget.personName),
         actions: <Widget>[
           IconButton(
+              icon: Icon(
+                Icons.fastfood_outlined,
+                color: foodFilter ? Colors.grey : Colors.white,
+              ),
+              onPressed: () {
+                setState(() {
+                  foodFilter = !foodFilter;
+                });
+              }),
+          IconButton(
             icon: Icon(
               Icons.request_page,
               color: Colors.white,
             ),
             onPressed: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => RequestsPage.createRequestPage(widget.personName)));
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          RequestsPage.createRequestPage(widget.personName)));
             },
           ),
           IconButton(
@@ -117,8 +131,10 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
                         physics: AlwaysScrollableScrollPhysics(),
                         child: Container(
                             height: Constants.getDeviceHeightForList(context),
-                            child: Center(child: Text("Could not get data!\nPull down to reload",
-                            style: TextStyle(color: Colors.white))))),
+                            child: Center(
+                                child: Text(
+                                    "Could not get data!\nPull down to reload",
+                                    style: TextStyle(color: Colors.white))))),
                   );
                 return RefreshIndicator(
                     onRefresh: _refresh,
@@ -132,9 +148,8 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
           var result = await Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) =>
-                      StepperInputScreenForFinance(widget.personName, DateTime.now()))
-          );
+                  builder: (context) => StepperInputScreenForFinance(
+                      widget.personName, DateTime.now())));
 
           setState(() {});
           // fetchDataToSend(widget.personName);
@@ -145,18 +160,28 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
     );
   }
 
-  Widget _paymentListView(AsyncSnapshot<Object?> snapshot, BuildContext context) {
+  Widget _paymentListView(
+      AsyncSnapshot<Object?> snapshot, BuildContext context) {
     if (snapshot.hasError) _noConnectionWidget(context);
 
     if (snapshot.connectionState == ConnectionState.done) {
+      var entryList = snapshot.data as List<FinanceEntry>;
+      if (this.foodFilter) {
+        entryList = entryList
+            .where((element) =>
+                element.operationName.contains('food') ||
+                element.operationName.contains('FOOD'))
+            .toList();
+      }
+
       return Container(
         height: Constants.getDeviceHeightForList(context),
         width: Constants.getDeviceWidthForList(context),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            renderLastPaymentsWidget(snapshot.data, context),
-            totalWidget(snapshot.data),
+            renderLastPaymentsWidget(entryList, context),
+            totalWidget(entryList),
           ],
         ),
       );
@@ -369,23 +394,30 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
                         color: Colors.white70,
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
-                          child: (Column(
+                          child: (Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(currentElement.operationName),
-                                  _timeWidget(currentElement),
-                                  Text(currentElement.floatingAmount,
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 18,
-                                          color: currentElement.amount >= 0
-                                              ? Colors.green
-                                              : Colors.redAccent)),
-                                ],
-                              )
+                              Expanded(
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      currentElement.operationName,
+                                      textAlign: TextAlign.left,
+                                    ),
+                                    SizedBox(
+                                      height: 6,
+                                    ),
+                                    _timeWidget(currentElement),
+                                  ],
+                                ),
+                              ),
+                              Text(currentElement.floatingAmount,
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                      color: currentElement.amount >= 0
+                                          ? Colors.green
+                                          : Colors.redAccent)),
                             ],
                           )),
                         ),
@@ -479,10 +511,12 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
   }
 
   Widget _timeWidget(currentElement) {
-    return Column(
+    return Row(
       children: [
         Text(_getYYYYMMDD(currentElement)),
-        Text(_getHHMMSS(currentElement)),
+        SizedBox(width: 15),
+        Text(_getHHMMSS(currentElement),
+            style: TextStyle(fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -502,6 +536,10 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
 
     var hour = dateTime.hour.toString();
     var minute = dateTime.minute.toString();
+
+    if (minute.length == 1) {
+      minute = '0' + minute;
+    }
 
     return hour + ':' + minute;
   }
