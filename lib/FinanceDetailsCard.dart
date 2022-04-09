@@ -1,14 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
+
+import 'package:finadv/RequestsPage.dart';
 import 'package:finadv/StepperInputScreenForFinance.dart';
 import 'package:finadv/model/FinanceEntry.dart';
+import 'package:finadv/service/LocalStorageFinanceEntries.dart';
+import 'package:finadv/service/LocalStorageStuffRequests.dart';
 import 'package:finadv/service/PersistingService.dart';
 import 'package:finadv/utils/Constants.dart';
-import 'package:finadv/utils/HttpRequests.dart';
+import 'package:finadv/web/FinanceHttp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:finadv/RequestsPage.dart';
 
 class FinanceDetailsCard extends StatefulWidget {
   FinanceDetailsCard({Key? key, required this.personName}) : super(key: key);
@@ -25,35 +28,36 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
   final lowerValorController = TextEditingController();
   final nameController = TextEditingController();
   bool foodFilter = false;
-
   List<FinanceEntry>? _financeEntries;
-  Stopwatch stpwatch = Stopwatch();
+  bool isInternetOn = false;
 
   @override
   void initState() {
     super.initState();
     this.refreshData();
+
   }
 
-  void refreshData() async {
+  Future<void> refreshData() async {
     try {
-      var financeEntryList = await fetchDataAndSaveTotal(widget.personName);
-      setState(() {
-        this._financeEntries = financeEntryList;
-      });
+      var financeEntryList = await fetchDataAndSave(widget.personName);
+      this._financeEntries = financeEntryList;
+      this.isInternetOn = true;
+
     } catch (e) {
-      print(e);
-      print('jest kurwa~!!');
+      this._financeEntries = await LocalStorageFinanceEntries.getSavedList(widget.personName);
+      this.isInternetOn = false;
+      print('NO CONNECTION');
     }
   }
 
-  Future<List<FinanceEntry>> fetchDataAndSaveTotal(String personName) async {
+  Future<List<FinanceEntry>> fetchDataAndSave(String personName) async {
     await Future.delayed(Duration(milliseconds: 150));
     List<FinanceEntry> entryList = [];
 
     List<Future> futures = [
-      HttpRequests.waitForResponseInSeconds(seconds: 3),
-      HttpRequests.getFinanceEntriesFor(personName)
+      FinanceHttp.waitForResponseInSeconds(seconds: 3),
+      FinanceHttp.getFinanceEntriesFor(personName)
     ];
 
     var response = await Future.any(futures);
@@ -63,14 +67,20 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
         entryList.add(FinanceEntry.fromJsonMap(element));
       });
 
+      await _saveFinanceEntriesInLocalStorageForCurrentPerson(entryList, widget.personName);
       await _saveTotalInLocalStorage(entryList);
     }
 
     return entryList;
   }
 
+  Future<void> _saveFinanceEntriesInLocalStorageForCurrentPerson(List<FinanceEntry> givenEntries, String personName) async {
+    return await LocalStorageFinanceEntries.saveList(givenEntries, personName);
+  }
+
   Future<void> _saveTotalInLocalStorage(List<FinanceEntry> entryList) async {
     final prefs = await SharedPreferences.getInstance();
+
     prefs.setString(widget.personName, getSumOfAllEntries(entryList));
   }
 
@@ -81,65 +91,49 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
       appBar: AppBar(
         backgroundColor: Colors.indigoAccent,
         title: Text(widget.personName),
-        actions: <Widget>[
-          IconButton(
-              icon: Icon(
-                Icons.fastfood_outlined,
-                color: foodFilter ? Colors.grey : Colors.white,
-              ),
-              onPressed: () {
-                setState(() {
-                  foodFilter = !foodFilter;
-                });
-              }),
-          IconButton(
-            icon: Icon(
-              Icons.request_page,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) =>
-                          RequestsPage.createRequestPage(widget.personName)));
-            },
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.refresh,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              HttpRequests.clearAllEntries();
-              setState(() {});
-            },
-          )
-        ],
+        actions: actions(context),
       ),
-      backgroundColor: Colors.white60,
-      body: Center(
-        child: Padding(
-          padding: EdgeInsets.all(8.0),
-          child: FutureBuilder(
-              future: fetchDataAndSaveTotal(widget.personName),
-              builder: (builder, snapshot) {
-                if (snapshot.hasError)
+      backgroundColor: Colors.transparent,
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 1.0),
+        child: Container(
+            decoration: BoxDecoration(
+                gradient: LinearGradient(
+                    begin: Alignment.bottomLeft, end: Alignment.topRight,
+                    colors:
+                    [
+                      Colors.blue,
+                      Colors.white10
+                    ]
+                ),
+                borderRadius: BorderRadius.all(Radius.circular(10))),
+          child: Padding(
+            padding: EdgeInsets.all(8.0),
+            child: FutureBuilder(
+                future: fetchDataAndSave(widget.personName),
+                builder: (builder, snapshot) {
+                  if (snapshot.hasError) {
+                    return RefreshIndicator(
+                      onRefresh: _refreshScreen,
+                      child: Container(
+                          height: Constants.getDeviceHeightForList(context),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              Text(
+                                  "Could not get data!\nPull down to reload",
+                                  style: TextStyle(color: Colors.white)),
+                              renderLastPaymentsWidget(_financeEntries, context),
+                              totalWidget(_financeEntries),
+                            ],
+                          )),
+                    );
+                  }
                   return RefreshIndicator(
-                    onRefresh: _refresh,
-                    child: SingleChildScrollView(
-                        physics: AlwaysScrollableScrollPhysics(),
-                        child: Container(
-                            height: Constants.getDeviceHeightForList(context),
-                            child: Center(
-                                child: Text(
-                                    "Could not get data!\nPull down to reload",
-                                    style: TextStyle(color: Colors.white))))),
-                  );
-                return RefreshIndicator(
-                    onRefresh: _refresh,
-                    child: _paymentListView(snapshot, context));
-              }),
+                      onRefresh: _refreshScreen,
+                      child: _paymentListView(snapshot, context));
+                }),
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -148,9 +142,10 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
           var result = await Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => StepperInputScreenForFinance(
-                      widget.personName, DateTime.now())));
-
+                  builder: (context) =>
+                      StepperInputScreenForFinance(
+                          widget.personName, DateTime.now()))
+          );
           setState(() {});
           // fetchDataToSend(widget.personName);
         },
@@ -160,17 +155,74 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
     );
   }
 
-  Widget _paymentListView(
-      AsyncSnapshot<Object?> snapshot, BuildContext context) {
+  List<Widget> actions(BuildContext context) {
+    return <Widget>[
+      IconButton(
+          icon: Icon(
+            Icons.star,
+          ),
+          onPressed: () async {
+            LocalStorageFinanceEntries.showAll();
+            LocalStorageStuffRequests.showAll();
+          }),
+      IconButton(
+          icon: Icon(
+            Icons.fastfood_outlined,
+            color: foodFilter ? Colors.grey : Colors.white,
+          ),
+          onPressed: () {
+            setState(() {
+              foodFilter = !foodFilter;
+            });
+          }),
+      IconButton(
+        icon: Icon(
+          Icons.request_page,
+          color: Colors.white,
+        ),
+        onPressed: () {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) =>
+                      RequestsPage.createRequestPage(widget.personName)));
+        },
+      ),
+      IconButton(
+        icon: Icon(
+          Icons.refresh,
+          color: Colors.white,
+        ),
+        onPressed: () {
+          _refreshScreen();
+        },
+      ),
+      IconButton(
+        icon: Icon(
+          Icons.start,
+          color: Colors.pinkAccent,
+        ),
+        onPressed: () {
+          setState(() {
+            FinanceHttp.clearAllEntries();
+          });
+        },
+      )
+    ];
+  }
+
+  Widget _paymentListView(AsyncSnapshot<Object?> snapshot,
+      BuildContext context) {
     if (snapshot.hasError) _noConnectionWidget(context);
 
     if (snapshot.connectionState == ConnectionState.done) {
       var entryList = snapshot.data as List<FinanceEntry>;
+
       if (this.foodFilter) {
         entryList = entryList
             .where((element) =>
-                element.operationName.contains('food') ||
-                element.operationName.contains('FOOD'))
+        element.operationName.contains('food') ||
+            element.operationName.contains('FOOD'))
             .toList();
       }
 
@@ -241,7 +293,8 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
               nameController.text,
               getAmountFromDialog());
 
-          String response = await PersistingService.save(financeEntry);
+          String response = await PersistingService.saveFinanceEntry(
+              financeEntry);
 
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text(response)));
@@ -341,7 +394,9 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
 
   String getCurrentDate() {
     DateTime now = DateTime.now();
-    String minutes = now.minute.toString().length == 1
+    String minutes = now.minute
+        .toString()
+        .length == 1
         ? '0${now.minute}'
         : now.minute.toString();
     String date = '${now.year}-${now.month}-${now.day} ${now.hour}:${minutes}';
@@ -353,79 +408,87 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
         int.parse(lowerValorController.text);
   }
 
-  Future<void> _refresh() {
+  Future<void> _refreshScreen() {
     PersistingService.sendLocallySaved();
-    this.refreshData();
+
+    setState(() {
+      this.refreshData();
+    });
     return Future.delayed(Duration(seconds: 1));
   }
 
   Widget renderLastPaymentsWidget(_paymentList, context) {
     var actionsAmount = _paymentList?.length ?? 0;
-    var deviceWidth = MediaQuery.of(context).size.width;
+    var deviceWidth = MediaQuery
+        .of(context)
+        .size
+        .width;
 
     late List<FinanceEntry> paymentList = _paymentList as List<FinanceEntry>;
+    paymentList = paymentList.reversed.toList();
 
     return actionsAmount == 0
         ? Center(child: Text('Nothing to show'))
         : Container(
-            width: deviceWidth * 0.95,
-            child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: actionsAmount,
-                itemBuilder: (context, index) {
-                  var currentElement = paymentList.elementAt(index);
-                  return Container(
-                    decoration: BoxDecoration(
-                        borderRadius: BorderRadius.all(Radius.circular(10))),
-                    child: GestureDetector(
-                      onLongPress: () async {
-                        var name = await showMenu(
-                            context: context,
-                            position: RelativeRect.fill,
-                            items: <PopupMenuEntry>[
-                              menuItem(Constants.DELETE),
-                              menuItem(Constants.EDIT)
-                            ]);
+      width: deviceWidth * 0.95,
+      child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: actionsAmount,
+          itemBuilder: (context, index) {
+            var currentElement = paymentList.elementAt(index);
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomLeft, end: Alignment.topRight,
+                    colors:
+                      [Colors.grey,
+                      Colors.blueGrey]
 
-                        await _performSelectedAction(name, currentElement);
-                        setState(() {});
-                      },
-                      child: Card(
-                        color: Colors.white70,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: (Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      currentElement.operationName,
-                                      textAlign: TextAlign.left,
-                                    ),
-                                    SizedBox(
-                                      height: 6,
-                                    ),
-                                    _timeWidget(currentElement),
-                                  ],
-                                ),
-                              ),
-                              Text(currentElement.floatingAmount,
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
-                                      color: currentElement.amount >= 0
-                                          ? Colors.green
-                                          : Colors.redAccent)),
-                            ],
-                          )),
-                        ),
-                      ),
+                  ),
+                    borderRadius: BorderRadius.all(Radius.circular(10))),
+                child:  GestureDetector(
+                  onLongPress: () async {
+                    var name = await showMenu(
+                        context: context,
+                        position: RelativeRect.fill,
+
+                        items: <PopupMenuEntry>[
+                          menuItem(Constants.DELETE),
+                          menuItem(Constants.EDIT)
+                        ]);
+
+                    if (this.isInternetOn) {
+                      await _performSelectedAction(name, currentElement);
+                    }
+                  },
+                  child: Card(
+                    color: Colors.transparent,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(0.0, 4.0, 0.0, 4.0),
+                      child: (Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          Expanded(child: Text(currentElement.operationName, style: TextStyle(color: Colors.tealAccent,fontWeight: FontWeight.bold),)),
+                          Expanded(child: _timeWidget(currentElement)),
+                          Flexible(flex: 1, child: Text(
+                              currentElement.floatingAmount,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  color: currentElement.amount >= 0
+                                      ? Colors.greenAccent
+                                      : Colors.redAccent))),
+                        ],
+                      )),
                     ),
-                  );
-                }),
-          );
+                  ),
+                ),
+              ),
+            );
+          }),
+    );
   }
 
   PopupMenuItem<dynamic> menuItem(String value) {
@@ -456,8 +519,10 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
 
   Future<void> _performSelectedAction(name, FinanceEntry financeEntry) async {
     if (name == null) return;
-    if (name == Constants.DELETE)
+    if (name == Constants.DELETE) {
       await PersistingService.deleteEntity(financeEntry);
+      await _refreshScreen();
+    }
     if (name == Constants.EDIT) {
       Widget okButton = ElevatedButton(
           onPressed: () async {
@@ -511,12 +576,12 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
   }
 
   Widget _timeWidget(currentElement) {
-    return Row(
+    return Column(
       children: [
-        Text(_getYYYYMMDD(currentElement)),
+        Text(_getYYYYMMDD(currentElement),style: TextStyle(color: Colors.cyan)),
         SizedBox(width: 15),
         Text(_getHHMMSS(currentElement),
-            style: TextStyle(fontWeight: FontWeight.bold)),
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.cyan)),
       ],
     );
   }
@@ -544,12 +609,4 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
     return hour + ':' + minute;
   }
 
-// Future<List<FinanceEntry>> fetchLocalData(String personName) async {
-//   List<FinanceEntry> list =
-//       await LocalStorage.getLocallyEntitiesFromServer(personName);
-//   if (list.isEmpty)
-//     throw Error();
-//   else
-//     return list;
-// }
 }

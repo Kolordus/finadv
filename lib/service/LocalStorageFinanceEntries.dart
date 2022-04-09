@@ -1,9 +1,10 @@
 import 'dart:convert';
 
 import 'package:finadv/model/FinanceEntry.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class LocalStorage {
+class LocalStorageFinanceEntries {
 
   static Future<bool> saveEntityLocally(String json) async {
     SharedPreferences db = await SharedPreferences.getInstance();
@@ -36,7 +37,7 @@ class LocalStorage {
     return encodedJsons;
   }
 
-  static Future<List<String>> getSavedRecordsAndRemove() async {
+  static Future<List<String>> getSavedFinanceEntriesRecordsAndRemove() async {
     SharedPreferences db = await SharedPreferences.getInstance();
 
     Set<String> keys = db.getKeys();
@@ -68,6 +69,10 @@ class LocalStorage {
     for (var value in db.getKeys()) {
       if (value.contains("Local")) print(value);
     }
+
+    print(await db.getStringList('entries Jack'));
+    print(await db.getStringList('entries Pau'));
+
   }
 
   static Future<String> getTotalForName(String personName) async {
@@ -75,18 +80,27 @@ class LocalStorage {
     return prefs.getString(personName).toString();
   }
 
-// static Future<List<FinanceEntry>> getLocallyEntitiesFromServer(String personName) async {
-//   SharedPreferences db = await SharedPreferences.getInstance();
-//   String string = db.getString(personName)!;
-//   List jsonList = jsonDecode(string);
-//
-//   List<FinanceEntry> list = [];
-//
-//   jsonList.forEach((element) {
-//     list.add(FinanceEntry.fromJsonMap(element));
-//   });
-//
-//   return list;
-// }
+  static saveList(givenEntries, personName) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> parsedEntries = [];
+
+    givenEntries.forEach((element) {
+      parsedEntries.add(jsonEncode(element));
+    });
+
+    prefs.setStringList('entries ' + personName, parsedEntries);
+  }
+
+  static Future<List<FinanceEntry>> getSavedList(String personName) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String>? parsedEntries = prefs.getStringList('entries ' + personName);
+    List<FinanceEntry> resultList = [];
+
+    parsedEntries?.forEach((element) {
+      resultList.add(FinanceEntry.fromJsonMap(jsonDecode(element)));
+    });
+
+    return resultList;
+  }
 
 }

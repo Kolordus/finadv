@@ -1,15 +1,15 @@
 import 'package:finadv/FinanceDetailsCard.dart';
 import 'package:finadv/service/PersistingService.dart';
-import 'package:finadv/service/LocalStorage.dart';
+import 'package:finadv/service/LocalStorageFinanceEntries.dart';
 import 'package:finadv/utils/Constants.dart';
 import 'package:flutter/material.dart';
 import 'dart:core' as std;
 
 import 'SummaryCard.dart';
 
+// flutter build apk --split-per-abi
 void main() async {
   runApp(MyApp());
-  LocalStorage.showAll();
   await PersistingService.sendLocallySaved();
 }
 
@@ -52,25 +52,40 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black12,
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.grey,
-        onTap: _onItemTapped,
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.white,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-              icon: Icon(Icons.accessibility_sharp),
-              label: Constants.PAU
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.only(
+              topRight: Radius.circular(30), topLeft: Radius.circular(30)),
+          boxShadow: [
+            BoxShadow(color: Colors.black38, spreadRadius: 0, blurRadius: 10),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(10.0),
+            topRight: Radius.circular(10.0),
           ),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.accessible),
-              label: Constants.JACK
+          child: BottomNavigationBar(
+            backgroundColor: Colors.blueAccent,
+            onTap: _onItemTapped,
+            currentIndex: _selectedIndex,
+            selectedItemColor: Colors.white,
+            items: const <BottomNavigationBarItem>[
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.accessibility_sharp),
+                  label: Constants.PAU
+              ),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.accessible),
+                  label: Constants.JACK
+              ),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.attach_money),
+                  label: Constants.SUM_UP
+              ),
+            ],
           ),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.attach_money),
-              label: Constants.SUM_UP
-          ),
-        ],
+        ),
       ),
       body: PageView(
         controller: pageController,
@@ -82,7 +97,7 @@ class _MyHomePageState extends State<MyHomePage> {
         children: [
           FinanceDetailsCard(personName: Constants.PAU),
           FinanceDetailsCard(personName: Constants.JACK),
-          SummaryCard(persons: [Constants.PAU, Constants.JACK],),
+          SummaryCard(),
         ],
       )
     );

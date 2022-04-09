@@ -2,7 +2,10 @@ import 'dart:convert';
 import 'dart:core';
 
 import 'package:finadv/model/StuffRequest.dart';
-import 'package:finadv/utils/HttpRequests.dart';
+import 'package:finadv/service/LocalStorageStuffRequests.dart';
+import 'package:finadv/service/PersistingService.dart';
+import 'package:finadv/web/FinanceHttp.dart';
+import 'package:finadv/web/RequestsHttp.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -22,20 +25,18 @@ class _RequestPageState extends State<RequestsPage> {
   List<StuffRequest> _stuffRequests = [];
   final _formKey = GlobalKey<FormState>();
   final operationNameController = TextEditingController();
+  late Future<List<StuffRequest>> _fetchDataFuture = fetchData();
 
   @override
   void initState() {
     super.initState();
+    this._fetchDataFuture = fetchData();
     this.pullData();
     // to do preferences!!
   }
 
   refreshScreen() {
-    setState(() {
-      // teraz tak: to by wyglądało na invalidate cache...
-      // ale chyba dużo aplikacji ma zrobione tak, żę przeładowuje dane
-      // wiec zostawiam to tak jak jest
-    });
+    setState(() {});
   }
 
   void pullData() async {
@@ -45,8 +46,7 @@ class _RequestPageState extends State<RequestsPage> {
         this._stuffRequests = _stuffRequests;
       });
     } catch (e) {
-      print(e);
-      print('jest kurwa~!!');
+      print('ERROR!!');
     }
   }
 
@@ -56,6 +56,15 @@ class _RequestPageState extends State<RequestsPage> {
       backgroundColor: Colors.blueGrey,
       appBar: AppBar(
         title: Text("Requests"),
+        actions: [IconButton(
+            icon: Icon(
+              Icons.refresh,
+            ),
+            onPressed: () async {
+              await PersistingService.sendLocallySaved();
+              setState(() {
+              });
+            })],
       ),
       floatingActionButton: OutlinedButton(
           onPressed: () async {
@@ -74,14 +83,22 @@ class _RequestPageState extends State<RequestsPage> {
         child: Container(
           color: Colors.blueGrey,
           child: FutureBuilder(
-              future: fetchData(),
+              future: this._fetchDataFuture,
               builder: (builder, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting)
                   return Center(child: CircularProgressIndicator(color: Colors.red,));
+
                 if (snapshot.hasError)
-                  return Center(child: Text('No internet connection :(', style: TextStyle(fontSize: 20),));
+                  return Center(child: Column(
+                    children: [
+                      Text('No internet connection :( reading locally saved', style: TextStyle(fontSize: 20),),
+                      locallySavedStuffRequests(),
+                    ],
+                  ));
+
                 if (snapshot.connectionState == ConnectionState.done && _stuffRequests.length == 0)
                   return Center(child: Text('No requests', style: TextStyle(fontSize: 20),));
+
                 return GridView.builder(
                     scrollDirection: Axis.vertical,
                     shrinkWrap: true,
@@ -91,7 +108,7 @@ class _RequestPageState extends State<RequestsPage> {
                         mainAxisSpacing: 5),
                     itemCount: _stuffRequests.length,
                     itemBuilder: (BuildContext ctx, index) {
-                      return singleTile(_stuffRequests.elementAt(index));
+                      return singleTile(_stuffRequests.elementAt(index), true);
                     });
               }),
         ),
@@ -99,7 +116,7 @@ class _RequestPageState extends State<RequestsPage> {
     );
   }
 
-  Widget singleTile(StuffRequest stuff) {
+  Widget singleTile(StuffRequest stuff, bool showDeleteButton) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(4.0, 0.0, 4.0, 0.0),
       child: Container(
@@ -134,9 +151,9 @@ class _RequestPageState extends State<RequestsPage> {
                     fontSize: 13,
                     decoration: TextDecoration.none),
               ),
-              OutlinedButton(
+              showDeleteButton ? OutlinedButton(
                   onPressed: () async {
-                    await HttpRequests.deleteStuffRequest(stuff.date);
+                    await RequestsHttp.deleteStuffRequest(stuff.date);
                     this.pullData();
                   },
                   style: ElevatedButton.styleFrom(
@@ -146,22 +163,23 @@ class _RequestPageState extends State<RequestsPage> {
                     Icons.cancel,
                     size: 20,
                     color: Colors.red,
-                  ))
+                  )) : Text('LOCAL', style: TextStyle(color: Colors.red),)
             ],
           ))),
     );
   }
 
-  fetchData() async {
-    await Future.delayed(Duration(milliseconds: 150));
+  Future<List<StuffRequest>> fetchData() async {
     List<StuffRequest> stuffList = [];
 
     List<Future> futures = [
-      HttpRequests.waitForResponseInSeconds(seconds: 3),
-      HttpRequests.getStuffRequests()
+      FinanceHttp.waitForResponseInSeconds(seconds: 3),
+      RequestsHttp.getStuffRequests()
     ];
 
     var response = await Future.any(futures);
+
+    await Future.delayed(Duration(milliseconds: 150));
 
     if (response.statusCode == 200) {
       jsonDecode(response.body).forEach((element) {
@@ -174,16 +192,8 @@ class _RequestPageState extends State<RequestsPage> {
     return stuffList;
   }
 
-  Future<void> _saveStuffRequestsInLocalStorage(
-      List<StuffRequest> stuffList) async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String> stuffRequestsList = [];
-
-    stuffList.forEach((element) {
-      stuffRequestsList.add(element.toString());
-    });
-
-    prefs.setStringList('requests', stuffRequestsList);
+  Future<void> _saveStuffRequestsInLocalStorage(List<StuffRequest> stuffList) async {
+    return await LocalStorageStuffRequests.saveList(stuffList);
   }
 
   void createEntry() async {
@@ -192,7 +202,7 @@ class _RequestPageState extends State<RequestsPage> {
           StuffRequest stuffRequest = StuffRequest(DateTime.now().toString(),
               widget.personName, operationNameController.text);
 
-          await HttpRequests.saveStuffRequest(stuffRequest);
+          await PersistingService.saveStuffRequest(stuffRequest);
 
           Navigator.pop(context);
           setState(() {
@@ -238,4 +248,33 @@ class _RequestPageState extends State<RequestsPage> {
           );
         });
   }
+
+  Widget locallySavedStuffRequests() {
+    return
+      FutureBuilder(
+          future: LocalStorageStuffRequests.getSavedRecords(),
+          builder: (builder, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting)
+              return Center(child: Column(
+                children: [
+                  Text("bringing locally saved stuff"),
+                  CircularProgressIndicator(color: Colors.red,),
+                ],
+              ));
+            List<StuffRequest> data = snapshot.data as List<StuffRequest>;
+            return GridView.builder(
+                scrollDirection: Axis.vertical,
+                shrinkWrap: true,
+                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 150,
+                    crossAxisSpacing: 0,
+                    mainAxisSpacing: 5),
+                itemCount: data.length,
+                itemBuilder: (BuildContext ctx, index) {
+                  return singleTile(data.elementAt(index), false);
+                });
+          });
+  }
+
 }
+

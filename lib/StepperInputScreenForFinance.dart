@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
 
+import 'FinanceDetailsCard.dart';
+
 class StepperInputScreenForFinance extends StatefulWidget {
   final String personName;
   final DateTime now;
@@ -33,12 +35,13 @@ class _StepperInputScreenForFinanceState
             .showSnackBar(SnackBar(content: Text("Form Incomplete!", textAlign: TextAlign.center,)));
         return null;
       }
+
       String amount = amountController.text.replaceAll(".", "");
 
       var financeEntry = FinanceEntry(widget.personName, widget.now.toString(),
           operationNameController.text, int.parse(amount));
 
-      PersistingService.save(financeEntry);
+      PersistingService.saveFinanceEntry(financeEntry);
 
       Navigator.pop(context, financeEntry);
     }

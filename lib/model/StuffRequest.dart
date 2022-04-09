@@ -1,7 +1,5 @@
 import 'dart:core' as std;
 
-import 'package:flutter/cupertino.dart';
-
 class StuffRequest {
   final std.String date;
   final std.String personName;

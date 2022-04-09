@@ -1,82 +1,38 @@
 import 'dart:convert';
 
 import 'package:finadv/utils/Constants.dart';
-import 'package:finadv/utils/HttpRequests.dart';
+import 'package:finadv/web/FinanceHttp.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'DataToSendScreen.dart';
 
 class SummaryCard extends StatefulWidget {
-  final List<String>? persons;
+  final List<String> persons = [Constants.PAU, Constants.JACK];
 
-  SummaryCard({@required this.persons});
+  SummaryCard();
 
   @override
   State<StatefulWidget> createState() => _SummaryCardState();
 }
 
 class _SummaryCardState extends State<SummaryCard> {
-  Future<Balance>? _balance;
+  late Future<Balance> _balance;
   var pauTotal;
   var jacTotal;
   late SharedPreferences prefs;
+  bool isInternetOn = false;
+  bool demandRecalculate = false;
+  Balance offlineBalance = Balance.EMPTY_OBJ;
 
   @override
   void initState() {
     super.initState();
-
     this._balance = _getBalanceAndTotals();
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-        future: _getBalanceAndTotals(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError)
-            return Center(
-                child: Text('Empty', style: TextStyle(color: Colors.white)));
-
-          return snapshot.connectionState == ConnectionState.waiting
-              ? Center(child: CircularProgressIndicator())
-              : renderStats(snapshot.data);
-        });
-  }
-
-  Future<Balance> _getBalanceAndTotals() async {
-    Balance newestBalance = Balance.EMPTY_OBJ;
-
-    prefs = await SharedPreferences.getInstance();
-    pauTotal = prefs.getString(Constants.PAU);
-    jacTotal = prefs.getString(Constants.JACK);
-
-    try {
-      List<Future> futures = [
-        HttpRequests.waitForResponseInSeconds(seconds: 3),
-        HttpRequests.getBalance(),
-      ];
-
-      var response = await Future.any(futures);
-
-      if (response.statusCode != null && response.statusCode == 200) {
-        var json = jsonDecode(response.body);
-        newestBalance = Balance.fromJson(json);
-        prefs.setString("balance", response.body);
-
-      }
-    } catch (e) {
-      var fromLocalStorage = Balance.fromJson(jsonDecode(prefs.getString("balance")!));
-
-      newestBalance = fromLocalStorage != null ? fromLocalStorage : Balance.EMPTY_OBJ;;
-    }
-
-    return newestBalance;
-  }
-
-  Widget renderStats(data) {
-    var balance = data as Balance;
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Bilans'),
@@ -96,81 +52,146 @@ class _SummaryCardState extends State<SummaryCard> {
           IconButton(
               icon: Icon(Icons.warning_amber_sharp, color: Colors.white),
               onPressed: () {
-                HttpRequests.clearBalance();
+                FinanceHttp.clearBalance();
                 setState(() {});
               })
         ],
       ),
-      backgroundColor: Colors.white60,
+      backgroundColor: Colors.transparent,
       body: Padding(
-        padding: EdgeInsets.only(top: 24.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: Constants.getDeviceWidthForList(context) * 0.9,
-              height: Constants.getDeviceHeightForList(context) * 0.5,
-              child: Card(
-                color: Colors.white70,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 1.0),
+        child: Container(
+          decoration: BoxDecoration(
+              gradient: LinearGradient(
+                  begin: Alignment.bottomLeft, end: Alignment.topRight,
+                  colors:
+                  [
+                    Colors.white10,
+                    Colors.blue
+                  ]
+              ),
+              borderRadius: BorderRadius.all(Radius.circular(10))),
+          child: FutureBuilder(
+              future: _getBalanceAndTotals(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Center(
+                      child: Text(
+                          'Empty', style: TextStyle(color: Colors.white)));
+                }
+
+                if (snapshot.connectionState == ConnectionState.done) {
+                  return renderStats(snapshot.data);
+                }
+
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
+
+                return Text('somethign went wrong');
+
+              }),
+        ),
+      ),
+    );
+  }
+
+  Future<Balance> _getBalanceAndTotals() async {
+    await Future.delayed(Duration(milliseconds: 150));
+    Balance newestBalance = Balance.EMPTY_OBJ;
+
+    prefs = await SharedPreferences.getInstance();
+    pauTotal = prefs.getString(Constants.PAU);
+    jacTotal = prefs.getString(Constants.JACK);
+
+    try {
+      List<Future> futures = [
+        FinanceHttp.waitForResponseInSeconds(seconds: 3),
+        FinanceHttp.getBalance(),
+      ];
+
+      var response = await Future.any(futures);
+
+      if (response.statusCode != null && response.statusCode == 200) {
+        var json = jsonDecode(response.body);
+        newestBalance = Balance.fromJson(json);
+        prefs.setString("balance", response.body);
+        isInternetOn = true;
+      }
+    } catch (e) {
+      isInternetOn = false;
+      var fromLocalStorage = Balance.fromJson(jsonDecode(prefs.getString("balance")!));
+      newestBalance = fromLocalStorage != null ? fromLocalStorage : Balance.EMPTY_OBJ;
+    }
+
+    return newestBalance;
+  }
+
+  Widget renderStats(data) {
+    var balance = data as Balance;
+    return Card(
+      color: Colors.transparent,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'SUMMARY',
+                  style: TextStyle(
+                      color: Colors.cyanAccent,
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold),
+                ),
+                isInternetOn ? Text('') : Text('No internet - bringing previously saved balance', style: TextStyle(color: Colors.cyanAccent),),
+              ],
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Podsumowanie',
-                            style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              _personTotalWidget(Constants.JACK, jacTotal),
-                              _personTotalWidget(Constants.PAU, pauTotal),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          IconButton(onPressed: () {},
-                            icon: Icon(Icons.ac_unit_outlined, color: Colors.yellow, size: 30,),
-                          ),
-                          Text(balance._whoLeads.toString().toUpperCase(),
-                              style:
-                                  TextStyle(color: Colors.black, fontSize: 20)),
-                          SizedBox(width: 15),
-                          Text(balance.balance,
-                              style: TextStyle(
-                                  color: Colors.green,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20)),
-                        ],
-                      ),
-                    ),
+                    _personTotalWidget(Constants.JACK, jacTotal),
+                    _personTotalWidget(Constants.PAU, pauTotal),
                   ],
                 ),
               ),
-            )
-          ],
-        ),
+            ],
+          ),
+          OutlinedButton(onPressed: () {
+            setState(() {
+              _recalculateBalance();
+            });
+            },
+              child: Text('Recalculate')),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(onPressed: () {},
+                  icon: Icon(Icons.ac_unit_outlined, color: Colors.yellow, size: 30,),
+                ),
+                Text(demandRecalculate ? offlineBalance._whoLeads : balance._whoLeads.toString().toUpperCase(),
+                    style:
+                        TextStyle(color: Colors.tealAccent, fontSize: 20)),
+                SizedBox(width: 15),
+                Text(demandRecalculate ? offlineBalance.balance : balance.balance,
+                    style: TextStyle(
+                        color: Colors.tealAccent,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 30)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -178,16 +199,24 @@ class _SummaryCardState extends State<SummaryCard> {
   Padding _personTotalWidget(String personName, String total) {
     return Padding(
       padding: const EdgeInsets.all(10.0),
-      child: Row(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 20.0),
-            child: Text(personName, style: TextStyle(fontSize: 20)),
-          ),
-          Text(total, style: TextStyle(fontSize: 20)),
+          Text(personName, style: TextStyle(fontSize: 25, color: Colors.teal)),
+          Text(total, style: TextStyle(fontSize: 28, color: Colors.tealAccent)),
         ],
       ),
     );
+  }
+
+  void _recalculateBalance() {
+    var result = (double.parse(jacTotal) - double.parse(pauTotal));
+
+    int parsedToInt = int.parse(result.abs().toString().replaceAll('.', ''));
+
+    demandRecalculate = true;
+
+    this.offlineBalance = Balance(parsedToInt, result > 0 ? Constants.JACK : Constants.PAU, '');
   }
 }
 
@@ -228,7 +257,3 @@ String getYYYYMMDD(currentElement) {
   return year + '-' + month + '-' + day;
 }
 
-Future<String> _getTotalFromLocalStorageByName(String personName) async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString(personName).toString();
-}

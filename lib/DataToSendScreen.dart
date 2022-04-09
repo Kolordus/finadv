@@ -1,4 +1,6 @@
-import 'package:finadv/service/LocalStorage.dart';
+import 'dart:io';
+
+import 'package:finadv/service/LocalStorageFinanceEntries.dart';
 import 'package:finadv/utils/Constants.dart';
 import 'package:flutter/material.dart';
 
@@ -14,7 +16,7 @@ class DataToSendScreen extends StatefulWidget {
 class _DataToSendScreenState extends State<DataToSendScreen> {
 
   Future<List<FinanceEntry>> getEntitiesToSave() async {
-    List<String> jsonList = await LocalStorage.getSavedRecords();
+    List<String> jsonList = await LocalStorageFinanceEntries.getSavedRecords();
     List<FinanceEntry> list = [];
 
     jsonList.forEach((element) {
@@ -93,15 +95,18 @@ class _DataToSendScreenState extends State<DataToSendScreen> {
                           mainAxisAlignment:
                           MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(currentElement.operationName),
-                            Text(currentElement.personName),
-                            _timeWidget(currentElement),
-                            Text(currentElement.floatingAmount,
-                                style: TextStyle(
-                                    fontSize: 15,
-                                    color: currentElement.amount >= 0
-                                        ? Colors.green
-                                        : Colors.redAccent)),
+                            Flexible(flex: 3, child: Text(currentElement.operationName)),
+                            Flexible(flex: 1, child: Text(currentElement.personName)),
+                            Flexible(flex: 2, child: _timeWidget(currentElement)),
+                            Flexible(
+                              flex: 1,
+                              child: Text(currentElement.floatingAmount,
+                                  style: TextStyle(
+                                      fontSize: 15,
+                                      color: currentElement.amount >= 0
+                                          ? Colors.green
+                                          : Colors.redAccent)),
+                            ),
                           ],
                         )
                       ],
@@ -131,7 +136,7 @@ class _DataToSendScreenState extends State<DataToSendScreen> {
     if (name == null)
       return;
     if (name == Constants.DELETE) {
-      await LocalStorage.removeRecordFromLocal(financeEntry);
+      await LocalStorageFinanceEntries.removeRecordFromLocal(financeEntry);
     }
   }
 
