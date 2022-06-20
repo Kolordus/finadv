@@ -42,4 +42,18 @@ class FinanceEntry {
   int get hashCode {
     return Object.hash(this.personName, this.floatingAmount, this.date, this.amount, this.operationName);
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (other is FinanceEntry) {
+      if (this.amount.compareTo(other.amount) != 0) return false;
+      if (this.personName.compareTo(other.personName) != 0) return false;
+      if (this.operationName.compareTo(other.operationName) != 0) return false;
+      if (this.date.compareTo(other.date) != 0) return false;
+
+      return true;
+    }
+
+    return false;
+  }
 }

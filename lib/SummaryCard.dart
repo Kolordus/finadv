@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:finadv/utils/Constants.dart';
+import 'package:finadv/utils/Styles.dart';
 import 'package:finadv/web/FinanceHttp.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,6 +15,8 @@ class SummaryCard extends StatefulWidget {
 
   @override
   State<StatefulWidget> createState() => _SummaryCardState();
+
+
 }
 
 class _SummaryCardState extends State<SummaryCard> {
@@ -38,23 +41,50 @@ class _SummaryCardState extends State<SummaryCard> {
         title: Text('Bilans'),
         backgroundColor: Colors.indigoAccent,
         actions: <Widget>[
-          IconButton(
-            icon: Icon(
-              Icons.airplane_ticket_rounded,
-              color: Colors.white,
+          Center(
+            child: OutlinedButton(
+              style: Styles.buttonStyle(),
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => DataToSendScreen()));
+                // fetchDataToSend(widget.personName);
+              },
+              child: Text(
+                "TO SEND",
+                style: TextStyle(fontSize: 10, color: Colors.yellow),
+              ),
             ),
-            onPressed: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => DataToSendScreen()));
-              // fetchDataToSend(widget.personName);
-            },
           ),
-          IconButton(
-              icon: Icon(Icons.warning_amber_sharp, color: Colors.white),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4,0,4,0),
+            child: Center(
+              child: OutlinedButton(
+                style: Styles.buttonStyle(),
+                onPressed: () {
+                  showChangeIPDialog();
+                },
+                child: Text(
+                  "IP",
+                  style: TextStyle(fontSize: 10, color: Colors.yellow),
+                ),
+              ),
+            ),
+          ),
+          Center(
+            child: OutlinedButton(
+              style: Styles.buttonStyle(),
               onPressed: () {
                 FinanceHttp.clearBalance();
                 setState(() {});
-              })
+              },
+              child: Text(
+                "ZERO BALANCES",
+                style: TextStyle(fontSize: 10, color: Colors.red),
+              ),
+            ),
+          ),
         ],
       ),
       backgroundColor: Colors.transparent,
@@ -63,21 +93,17 @@ class _SummaryCardState extends State<SummaryCard> {
         child: Container(
           decoration: BoxDecoration(
               gradient: LinearGradient(
-                  begin: Alignment.bottomLeft, end: Alignment.topRight,
-                  colors:
-                  [
-                    Colors.white10,
-                    Colors.blue
-                  ]
-              ),
+                  begin: Alignment.bottomLeft,
+                  end: Alignment.topRight,
+                  colors: [Colors.white10, Colors.blue]),
               borderRadius: BorderRadius.all(Radius.circular(10))),
           child: FutureBuilder(
               future: _getBalanceAndTotals(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(
-                      child: Text(
-                          'Empty', style: TextStyle(color: Colors.white)));
+                      child:
+                          Text('Empty', style: TextStyle(color: Colors.white)));
                 }
 
                 if (snapshot.connectionState == ConnectionState.done) {
@@ -89,7 +115,6 @@ class _SummaryCardState extends State<SummaryCard> {
                 }
 
                 return Text('somethign went wrong');
-
               }),
         ),
       ),
@@ -106,7 +131,7 @@ class _SummaryCardState extends State<SummaryCard> {
 
     try {
       List<Future> futures = [
-        FinanceHttp.waitForResponseInSeconds(seconds: 3),
+        FinanceHttp.waitForResponseInSeconds(seconds: 5),
         FinanceHttp.getBalance(),
       ];
 
@@ -120,8 +145,10 @@ class _SummaryCardState extends State<SummaryCard> {
       }
     } catch (e) {
       isInternetOn = false;
-      var fromLocalStorage = Balance.fromJson(jsonDecode(prefs.getString("balance")!));
-      newestBalance = fromLocalStorage != null ? fromLocalStorage : Balance.EMPTY_OBJ;
+      var fromLocalStorage =
+          Balance.fromJson(jsonDecode(prefs.getString("balance")!));
+      newestBalance =
+          fromLocalStorage != null ? fromLocalStorage : Balance.EMPTY_OBJ;
     }
 
     return newestBalance;
@@ -146,7 +173,12 @@ class _SummaryCardState extends State<SummaryCard> {
                       fontSize: 30,
                       fontWeight: FontWeight.bold),
                 ),
-                isInternetOn ? Text('') : Text('No internet - bringing previously saved balance', style: TextStyle(color: Colors.cyanAccent),),
+                isInternetOn
+                    ? Text('')
+                    : Text(
+                        'No internet - bringing previously saved balance',
+                        style: TextStyle(color: Colors.cyanAccent),
+                      ),
               ],
             ),
           ),
@@ -165,25 +197,29 @@ class _SummaryCardState extends State<SummaryCard> {
               ),
             ],
           ),
-          OutlinedButton(onPressed: () {
-            setState(() {
-              _recalculateBalance();
-            });
-            },
-              child: Text('Recalculate')),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                IconButton(onPressed: () {},
-                  icon: Icon(Icons.ac_unit_outlined, color: Colors.yellow, size: 30,),
+                IconButton(
+                  onPressed: () {},
+                  icon: Icon(
+                    Icons.ac_unit_outlined,
+                    color: Colors.yellow,
+                    size: 30,
+                  ),
                 ),
-                Text(demandRecalculate ? offlineBalance._whoLeads : balance._whoLeads.toString().toUpperCase(),
-                    style:
-                        TextStyle(color: Colors.tealAccent, fontSize: 20)),
+                Text(
+                    demandRecalculate
+                        ? offlineBalance._whoLeads
+                        : balance._whoLeads.toString().toUpperCase(),
+                    style: TextStyle(color: Colors.tealAccent, fontSize: 20)),
                 SizedBox(width: 15),
-                Text(demandRecalculate ? offlineBalance.balance : balance.balance,
+                Text(
+                    demandRecalculate
+                        ? offlineBalance.balance
+                        : balance.balance,
                     style: TextStyle(
                         color: Colors.tealAccent,
                         fontWeight: FontWeight.bold,
@@ -216,7 +252,39 @@ class _SummaryCardState extends State<SummaryCard> {
 
     demandRecalculate = true;
 
-    this.offlineBalance = Balance(parsedToInt, result > 0 ? Constants.JACK : Constants.PAU, '');
+    this.offlineBalance =
+        Balance(parsedToInt, result > 0 ? Constants.JACK : Constants.PAU, '');
+  }
+
+  void showChangeIPDialog() {
+    var ipFieldCtrl = TextEditingController();
+    Widget okButton = ElevatedButton(
+        onPressed: () async {
+          setState(() {
+            Constants.SERVER_IP = ipFieldCtrl.value.text;
+          });
+          Navigator.pop(context);
+        },
+        child: Text('Ok'));
+
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('Change IP'),
+            actions: [okButton],
+            content: Column(
+              children: [
+                Text('Current ' + Constants.SERVER_IP),
+                TextFormField(
+                    controller: ipFieldCtrl,
+                    decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: 'Operation name'))
+              ],
+            ),
+          );
+        });
   }
 }
 
@@ -256,4 +324,3 @@ String getYYYYMMDD(currentElement) {
 
   return year + '-' + month + '-' + day;
 }
-

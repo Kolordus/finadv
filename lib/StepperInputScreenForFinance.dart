@@ -1,10 +1,9 @@
+import 'dart:ui';
+
 import 'package:finadv/model/FinanceEntry.dart';
 import 'package:finadv/service/PersistingService.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:ui';
-
-import 'FinanceDetailsCard.dart';
 
 class StepperInputScreenForFinance extends StatefulWidget {
   final String personName;
@@ -16,8 +15,7 @@ class StepperInputScreenForFinance extends StatefulWidget {
   State<StatefulWidget> createState() => _StepperInputScreenForFinanceState();
 }
 
-class _StepperInputScreenForFinanceState
-    extends State<StepperInputScreenForFinance> {
+class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFinance> {
   var _currentStep = 0;
   TextEditingController operationNameController = TextEditingController();
   TextEditingController amountController = TextEditingController();

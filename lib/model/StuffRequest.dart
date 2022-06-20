@@ -1,23 +1,25 @@
-import 'dart:core' as std;
+import 'dart:core';
 
 class StuffRequest {
-  final std.String date;
-  final std.String personName;
-  final std.String operationName;
+  final String date;
+  final String personName;
+  final String operationName;
 
   StuffRequest(this.date, this.personName, this.operationName);
 
-  static StuffRequest fromJsonMap(std.Map json) {
-    return StuffRequest(json['date'] as std.String,
-        json['personName'] as std.String, json['operationName'] as std.String);
+  static StuffRequest fromJsonMap(Map json) {
+    return StuffRequest(
+        json['date'] as String,
+        json['personName'] as String,
+        json['operationName'] as String);
   }
 
-  @std.override
-  std.String toString() {
+  @override
+  String toString() {
     return 'StuffRequest{date: $date, personName: $personName, operationName: $operationName}';
   }
 
-  std.Map<std.String, std.Object?> toJson() => {
+  Map<String, Object?> toJson() => {
     'date': date,
     'personName': personName,
     'operationName': operationName

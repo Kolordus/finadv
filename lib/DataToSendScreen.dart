@@ -33,8 +33,18 @@ class _DataToSendScreenState extends State<DataToSendScreen> {
         backgroundColor: Colors.indigoAccent,
         title: Text('Waiting entities'),
       ),
-      backgroundColor: Colors.white60,
-      body: Center(
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: BoxDecoration(
+            gradient: LinearGradient(
+                begin: Alignment.bottomLeft, end: Alignment.topRight,
+                colors:
+                [
+                  Colors.blue,
+                  Colors.white10
+                ]
+            ),
+            borderRadius: BorderRadius.all(Radius.circular(10))),
         child: Padding(
           padding: EdgeInsets.all(8.0),
           child: FutureBuilder(
@@ -71,6 +81,13 @@ class _DataToSendScreenState extends State<DataToSendScreen> {
             var currentElement = _paymentList.elementAt(index);
             return Container(
               decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                      begin: Alignment.bottomLeft, end: Alignment.topRight,
+                      colors:
+                      [Colors.grey,
+                        Colors.blueGrey]
+
+                  ),
                   borderRadius: BorderRadius.all(Radius.circular(10))),
               child: GestureDetector(
                 onLongPress: () async {

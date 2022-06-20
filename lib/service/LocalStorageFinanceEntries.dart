@@ -69,10 +69,6 @@ class LocalStorageFinanceEntries {
     for (var value in db.getKeys()) {
       if (value.contains("Local")) print(value);
     }
-
-    print(await db.getStringList('entries Jack'));
-    print(await db.getStringList('entries Pau'));
-
   }
 
   static Future<String> getTotalForName(String personName) async {

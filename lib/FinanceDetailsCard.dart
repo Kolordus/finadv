@@ -5,9 +5,9 @@ import 'package:finadv/RequestsPage.dart';
 import 'package:finadv/StepperInputScreenForFinance.dart';
 import 'package:finadv/model/FinanceEntry.dart';
 import 'package:finadv/service/LocalStorageFinanceEntries.dart';
-import 'package:finadv/service/LocalStorageStuffRequests.dart';
 import 'package:finadv/service/PersistingService.dart';
 import 'package:finadv/utils/Constants.dart';
+import 'package:finadv/utils/Styles.dart';
 import 'package:finadv/web/FinanceHttp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -56,7 +56,7 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
     List<FinanceEntry> entryList = [];
 
     List<Future> futures = [
-      FinanceHttp.waitForResponseInSeconds(seconds: 3),
+      FinanceHttp.waitForResponseInSeconds(seconds: 5),
       FinanceHttp.getFinanceEntriesFor(personName)
     ];
 
@@ -137,7 +137,6 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        // onPressed: createEntry,
         onPressed: () async {
           var result = await Navigator.push(
               context,
@@ -146,6 +145,7 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
                       StepperInputScreenForFinance(
                           widget.personName, DateTime.now()))
           );
+          await Future.delayed(Duration(milliseconds: 500));
           setState(() {});
           // fetchDataToSend(widget.personName);
         },
@@ -157,14 +157,14 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
 
   List<Widget> actions(BuildContext context) {
     return <Widget>[
-      IconButton(
-          icon: Icon(
-            Icons.star,
-          ),
-          onPressed: () async {
-            LocalStorageFinanceEntries.showAll();
-            LocalStorageStuffRequests.showAll();
-          }),
+      // IconButton(
+      //     icon: Icon(
+      //       Icons.star,
+      //     ),
+      //     onPressed: () async {
+      //       LocalStorageFinanceEntries.showAll();
+      //       LocalStorageStuffRequests.showAll();
+      //     }),
       IconButton(
           icon: Icon(
             Icons.fastfood_outlined,
@@ -175,39 +175,29 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
               foodFilter = !foodFilter;
             });
           }),
-      IconButton(
-        icon: Icon(
-          Icons.request_page,
-          color: Colors.white,
-        ),
-        onPressed: () {
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) =>
-                      RequestsPage.createRequestPage(widget.personName)));
-        },
+      Center(
+        child: OutlinedButton(
+          style: Styles.buttonStyle(),
+          onPressed: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          RequestsPage.createRequestPage(widget.personName)));
+        }, child: Text("REQUESTS", style: TextStyle(fontSize: 10, color: Colors.yellow),),),
       ),
-      IconButton(
-        icon: Icon(
-          Icons.refresh,
-          color: Colors.white,
+      Padding(
+        padding: const EdgeInsets.fromLTRB(4,0,0,0),
+        child: Center(
+          child: OutlinedButton(
+            style: Styles.buttonStyle(),
+            onPressed: () {
+            setState(() {
+              FinanceHttp.clearAllEntries();
+            });
+          }, child: Text("FLATTEN", style: TextStyle(color: Colors.red, fontSize: 10)),),
         ),
-        onPressed: () {
-          _refreshScreen();
-        },
       ),
-      IconButton(
-        icon: Icon(
-          Icons.start,
-          color: Colors.pinkAccent,
-        ),
-        onPressed: () {
-          setState(() {
-            FinanceHttp.clearAllEntries();
-          });
-        },
-      )
     ];
   }
 
@@ -230,10 +220,11 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
         height: Constants.getDeviceHeightForList(context),
         width: Constants.getDeviceWidthForList(context),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            renderLastPaymentsWidget(entryList, context),
-            totalWidget(entryList),
+            Expanded(child: renderLastPaymentsWidget(entryList, context), flex: 9),
+            Divider(color: Colors.cyanAccent),
+            Flexible(child: totalWidget(entryList), flex: 1),
           ],
         ),
       );

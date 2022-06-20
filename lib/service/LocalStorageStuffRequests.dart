@@ -19,22 +19,29 @@ class LocalStorageStuffRequests {
     return DateTime.now().toString().substring(0, indexOfLastDot);
   }
 
-  static Future<List<StuffRequest>> getSavedRecords() async {
+  static Future<void> saveList(List<StuffRequest> stuffList) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> stuffRequestsList = [];
+
+    stuffList.forEach((element) {
+      stuffRequestsList.add(jsonEncode(element));
+    });
+
+    prefs.setStringList('requests', stuffRequestsList);
+  }
+
+  static Future<List<StuffRequest>> getSavedList() async {
     SharedPreferences db = await SharedPreferences.getInstance();
+    List<String>? parsedEntities = await db.getStringList('requests');
+    List<StuffRequest> resultList = [];
 
-    Set<String> keys = db.getKeys();
 
-    List<StuffRequest> stuffList = [];
+    parsedEntities?.forEach((element) {
+      var fromJsonMap = StuffRequest.fromJsonMap(jsonDecode(element));
+      resultList.add(fromJsonMap);
+    });
 
-    if (keys.isNotEmpty) {
-      keys.forEach((key) {
-        if (key.contains("Stuff")) {
-          stuffList.add(StuffRequest.fromJsonMap(jsonDecode(db.getString(key)!)));
-        }
-      });
-    }
-
-    return stuffList;
+    return resultList;
   }
 
   static Future<List<String>> getSavedStuffRequestsRecordsAndRemove() async {
@@ -72,15 +79,6 @@ class LocalStorageStuffRequests {
     print(await db.getStringList('requests'));
   }
 
-  static Future<void> saveList(List<StuffRequest> stuffList) async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String> stuffRequestsList = [];
 
-    stuffList.forEach((element) {
-      stuffRequestsList.add(element.toString());
-    });
-
-    prefs.setStringList('requests', stuffRequestsList);
-  }
 
 }

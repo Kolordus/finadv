@@ -1,9 +1,10 @@
+import 'dart:core';
+
 import 'package:finadv/FinanceDetailsCard.dart';
-import 'package:finadv/service/PersistingService.dart';
 import 'package:finadv/service/LocalStorageFinanceEntries.dart';
+import 'package:finadv/service/PersistingService.dart';
 import 'package:finadv/utils/Constants.dart';
 import 'package:flutter/material.dart';
-import 'dart:core' as std;
 
 import 'SummaryCard.dart';
 
@@ -15,7 +16,7 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
-  @std.override
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -30,25 +31,25 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key? key, required this.title}) : super(key: key);
-  final std.String title;
+  final String title;
 
-  @std.override
+  @override
   _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  std.int _selectedIndex = 0;
+  int _selectedIndex = 0;
   PageController pageController = PageController(initialPage: 0);
 
-  void _onItemTapped(std.int index) {
+  void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
       pageController.animateToPage(index,
-          duration: std.Duration(milliseconds: 200), curve: Curves.bounceInOut);
+          duration: Duration(milliseconds: 200), curve: Curves.bounceInOut);
     });
   }
 
-  @std.override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black12,

@@ -7,7 +7,6 @@ import 'package:finadv/model/StuffRequest.dart';
 import 'package:finadv/service/LocalStorageStuffRequests.dart';
 import 'package:finadv/web/RequestsHttp.dart';
 import 'package:http/http.dart';
-import 'package:wifi_info_flutter/wifi_info_flutter.dart';
 
 import '../web/FinanceHttp.dart';
 import 'LocalStorageFinanceEntries.dart';

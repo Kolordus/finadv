@@ -7,7 +7,6 @@ import 'package:finadv/service/PersistingService.dart';
 import 'package:finadv/web/FinanceHttp.dart';
 import 'package:finadv/web/RequestsHttp.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class RequestsPage extends StatefulWidget {
   final String personName;
@@ -53,7 +52,7 @@ class _RequestPageState extends State<RequestsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blueGrey,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: Text("Requests"),
         actions: [IconButton(
@@ -79,22 +78,31 @@ class _RequestPageState extends State<RequestsPage> {
             color: Colors.green,
           )),
       body: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(2.0),
         child: Container(
-          color: Colors.blueGrey,
+          decoration: BoxDecoration(
+              gradient: LinearGradient(
+                  begin: Alignment.bottomLeft, end: Alignment.topRight,
+                  colors:
+                  [
+                    Colors.blue,
+                    Colors.white10
+                  ]
+              ),
+              borderRadius: BorderRadius.all(Radius.circular(10))),
           child: FutureBuilder(
               future: this._fetchDataFuture,
               builder: (builder, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting)
                   return Center(child: CircularProgressIndicator(color: Colors.red,));
-
                 if (snapshot.hasError)
-                  return Center(child: Column(
+                  return Column(
+                    // mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       Text('No internet connection :( reading locally saved', style: TextStyle(fontSize: 20),),
                       locallySavedStuffRequests(),
                     ],
-                  ));
+                  );
 
                 if (snapshot.connectionState == ConnectionState.done && _stuffRequests.length == 0)
                   return Center(child: Text('No requests', style: TextStyle(fontSize: 20),));
@@ -173,7 +181,7 @@ class _RequestPageState extends State<RequestsPage> {
     List<StuffRequest> stuffList = [];
 
     List<Future> futures = [
-      FinanceHttp.waitForResponseInSeconds(seconds: 3),
+      FinanceHttp.waitForResponseInSeconds(seconds: 5),
       RequestsHttp.getStuffRequests()
     ];
 
@@ -252,7 +260,7 @@ class _RequestPageState extends State<RequestsPage> {
   Widget locallySavedStuffRequests() {
     return
       FutureBuilder(
-          future: LocalStorageStuffRequests.getSavedRecords(),
+          future: LocalStorageStuffRequests.getSavedList(),
           builder: (builder, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting)
               return Center(child: Column(
@@ -261,7 +269,9 @@ class _RequestPageState extends State<RequestsPage> {
                   CircularProgressIndicator(color: Colors.red,),
                 ],
               ));
+
             List<StuffRequest> data = snapshot.data as List<StuffRequest>;
+
             return GridView.builder(
                 scrollDirection: Axis.vertical,
                 shrinkWrap: true,
