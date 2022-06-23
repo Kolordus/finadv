@@ -1,7 +1,6 @@
 import 'dart:core';
 
 import 'package:finadv/FinanceDetailsCard.dart';
-import 'package:finadv/service/LocalStorageFinanceEntries.dart';
 import 'package:finadv/service/PersistingService.dart';
 import 'package:finadv/utils/Constants.dart';
 import 'package:flutter/material.dart';
@@ -103,5 +102,4 @@ class _MyHomePageState extends State<MyHomePage> {
       )
     );
   }
-
 }

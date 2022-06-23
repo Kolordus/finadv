@@ -35,7 +35,6 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
   void initState() {
     super.initState();
     this.refreshData();
-
   }
 
   Future<void> refreshData() async {
@@ -145,6 +144,7 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
                       StepperInputScreenForFinance(
                           widget.personName, DateTime.now()))
           );
+
           await Future.delayed(Duration(milliseconds: 500));
           setState(() {});
           // fetchDataToSend(widget.personName);
@@ -157,14 +157,6 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
 
   List<Widget> actions(BuildContext context) {
     return <Widget>[
-      // IconButton(
-      //     icon: Icon(
-      //       Icons.star,
-      //     ),
-      //     onPressed: () async {
-      //       LocalStorageFinanceEntries.showAll();
-      //       LocalStorageStuffRequests.showAll();
-      //     }),
       IconButton(
           icon: Icon(
             Icons.fastfood_outlined,
@@ -178,12 +170,14 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
       Center(
         child: OutlinedButton(
           style: Styles.buttonStyle(),
-          onPressed: () {
-              Navigator.push(
+          onPressed: () async {
+              var push = await Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (context) =>
                           RequestsPage.createRequestPage(widget.personName)));
+
+              setState(() { });
         }, child: Text("REQUESTS", style: TextStyle(fontSize: 10, color: Colors.yellow),),),
       ),
       Padding(

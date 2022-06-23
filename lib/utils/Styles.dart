@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 
 class Styles {
 
-  static ButtonStyle buttonStyle() {
+  static ButtonStyle buttonStyle({Color color = Colors.indigo,
+    Color background = Colors.transparent
+  }) {
+
     return OutlinedButton.styleFrom(
-      backgroundColor: Colors.transparent,
-      side: BorderSide(width: 1.0, color: Colors.indigo),
+      backgroundColor: background,
+      side: BorderSide(width: 1.5, color: color),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18.0),
       ),
