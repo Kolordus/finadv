@@ -95,7 +95,8 @@ class PersistingService {
     var connectivityResult = await Connectivity().checkConnectivity();
     // var wifiName = await WifiInfo().getWifiName();
 
-    if (connectivityResult == ConnectivityResult.wifi) {
+    if (connectivityResult == ConnectivityResult.wifi ||
+        connectivityResult == ConnectivityResult.mobile) {
       return true;
     }
 

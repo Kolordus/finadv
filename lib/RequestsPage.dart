@@ -28,6 +28,7 @@ class _RequestPageState extends State<RequestsPage> {
   List<StuffRequest> _stuffRequests = [];
   final _formKey = GlobalKey<FormState>();
   final operationNameController = TextEditingController();
+  int requestsAmount = 0;
 
   late Future<List<StuffRequest>> _fetchDataFuture = fetchData();
 
@@ -36,7 +37,6 @@ class _RequestPageState extends State<RequestsPage> {
     super.initState();
     this._fetchDataFuture = fetchData();
     this.pullData();
-    // to do preferences!!
   }
 
   refreshScreen() {
@@ -325,6 +325,7 @@ class _RequestPageState extends State<RequestsPage> {
         stuffList.add(StuffRequest.fromJsonMap(element));
       });
 
+      requestsAmount = stuffList.length;
       await _saveStuffRequestsInLocalStorage(stuffList);
     }
 

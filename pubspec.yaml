@@ -27,6 +27,7 @@ dependencies:
   permission_handler: ^8.1.6
   shared_preferences: ^2.0.6
   android_intent: ^2.0.2
+  badges: ^2.0.3
   flutter:
     sdk: flutter
 

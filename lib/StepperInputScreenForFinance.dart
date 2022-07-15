@@ -106,6 +106,7 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
           content: Column(
             children: [
               TextField(
+                  autocorrect: false,
                   decoration: InputDecoration(hintText: "Nazwa operacji"),
                   controller: operationNameController),
             ],
@@ -120,6 +121,7 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
               TextField(
                 decoration: InputDecoration(hintText: "złotych"),
                 controller: amountController,
+                autocorrect: false,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 onChanged: (text) {
                   if (text.length > 2) {

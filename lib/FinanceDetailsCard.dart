@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:badges/badges.dart';
 import 'package:finadv/RequestsPage.dart';
 import 'package:finadv/StepperInputScreenForFinance.dart';
 import 'package:finadv/model/FinanceEntry.dart';
@@ -9,9 +10,12 @@ import 'package:finadv/service/PersistingService.dart';
 import 'package:finadv/utils/Constants.dart';
 import 'package:finadv/utils/Styles.dart';
 import 'package:finadv/web/FinanceHttp.dart';
+import 'package:finadv/web/RequestsHttp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'model/StuffRequest.dart';
 
 class FinanceDetailsCard extends StatefulWidget {
   FinanceDetailsCard({Key? key, required this.personName}) : super(key: key);
@@ -30,6 +34,7 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
   bool foodFilter = false;
   List<FinanceEntry>? _financeEntries;
   bool isInternetOn = false;
+  int requestsAmount = 0;
 
   @override
   void initState() {
@@ -38,6 +43,8 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
   }
 
   Future<void> refreshData() async {
+    await _getRequestsAmount();
+
     try {
       var financeEntryList = await fetchDataAndSave(widget.personName);
       this._financeEntries = financeEntryList;
@@ -48,6 +55,20 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
       this.isInternetOn = false;
       print('NO CONNECTION');
     }
+  }
+
+  Future<void> _getRequestsAmount() async {
+    List<StuffRequest> stuffList = [];
+    var response = await RequestsHttp.getStuffRequests();
+    jsonDecode(response.body).forEach((element) {
+      stuffList.add(StuffRequest.fromJsonMap(element));
+    });
+
+    await Future.delayed(Duration(milliseconds: 50));
+
+    setState(() {
+      requestsAmount = stuffList.length;
+    });
   }
 
   Future<List<FinanceEntry>> fetchDataAndSave(String personName) async {
@@ -168,17 +189,23 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
             });
           }),
       Center(
-        child: OutlinedButton(
-          style: Styles.buttonStyle(),
-          onPressed: () async {
-              var push = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) =>
-                          RequestsPage.createRequestPage(widget.personName)));
+        child: Badge(
+          showBadge: requestsAmount > 0,
+          badgeContent: Text(requestsAmount.toString(), style: TextStyle(color: Colors.white)),
+          position: BadgePosition.topStart(),
+          child: OutlinedButton(
+            style: Styles.buttonStyle(),
+            onPressed: () async {
+                var push = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            RequestsPage.createRequestPage(widget.personName)));
 
-              setState(() { });
-        }, child: Text("REQUESTS", style: TextStyle(fontSize: 10, color: Colors.yellow),),),
+                _getRequestsAmount();
+          }, child: Text("REQUESTS", style: TextStyle(fontSize: 10, color: Colors.yellow),),
+          ),
+        ),
       ),
       Padding(
         padding: const EdgeInsets.fromLTRB(4,0,0,0),
