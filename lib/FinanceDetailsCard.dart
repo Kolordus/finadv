@@ -64,11 +64,12 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
       stuffList.add(StuffRequest.fromJsonMap(element));
     });
 
-    await Future.delayed(Duration(milliseconds: 50));
-
     setState(() {
       requestsAmount = stuffList.length;
     });
+
+    await Future.delayed(Duration(milliseconds: 50));
+
   }
 
   Future<List<FinanceEntry>> fetchDataAndSave(String personName) async {
@@ -271,13 +272,22 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
     );
   }
 
-  Widget totalWidget(amount) {
+  Widget totalWidget(list) {
+    if (list == null) {
+      return Column(
+        children: [
+          Text("Total: ",
+              style: TextStyle(
+                  color: Colors.lightGreenAccent, fontWeight: FontWeight.bold)),
+        ],
+      );
+    }
     return Column(
       children: [
         Text("Total: ",
             style: TextStyle(
                 color: Colors.lightGreenAccent, fontWeight: FontWeight.bold)),
-        Text(getSumOfAllEntries(amount),
+        Text(getSumOfAllEntries(list),
             style: TextStyle(
                 color: Colors.lightGreenAccent,
                 fontWeight: FontWeight.bold,
@@ -436,8 +446,14 @@ class _FinanceDetailsCardState extends State<FinanceDetailsCard> {
         .size
         .width;
 
-    late List<FinanceEntry> paymentList = _paymentList as List<FinanceEntry>;
-    paymentList = paymentList.reversed.toList();
+    late List<FinanceEntry> paymentList;
+    if (_paymentList != null) {
+      paymentList = _paymentList as List<FinanceEntry>;
+      paymentList = paymentList.reversed.toList();
+    }
+    else {
+      _paymentList = [];
+    }
 
     return actionsAmount == 0
         ? Center(child: Text('Nothing to show'))
